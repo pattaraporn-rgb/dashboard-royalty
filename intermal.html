@@ -1433,98 +1433,177 @@ function copyGasCode(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// EXPORT AS HTML
+// EXPORT AS HTML — Full Dashboard Snapshot
 // ════════════════════════════════════════════════════════════════
 function exportAsHTML(){
   if(!D||Object.keys(D).length===0){
     alert('ยังไม่มีข้อมูล กรุณาอัปโหลดหรือ Sync ก่อน');
     return;
   }
-  const s=JSON.parse(localStorage.getItem('ld_settings')||'{}');
-  const brand=s.color||'#004EE6';
+  const sett=JSON.parse(localStorage.getItem('ld_settings')||'{}');
+  const logo=localStorage.getItem('ld_logo')||document.getElementById('logoImg').src;
+  const brand=sett.color||'#004EE6';
   const brandDk=darkenColor(brand,0.25);
   const brandLt=lightenColor(brand,0.9);
-  const storeName=s.storeName||'Loyalty Dashboard';
-  const tagline=s.tagline||'';
+  const storeName=sett.storeName||'Loyalty Dashboard';
+  const tagline=sett.tagline||'Powered by Rocket Loyalty CRM';
   const exportDate=new Date().toLocaleString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
-  const f=n=>(n||0).toLocaleString('en-US');
-  const pctTxt=v=>{if(v===null||v===undefined)return'–';const p=v*100;return(p>0.05?'▲ +':p<-0.05?'▼ ':'')+(!p?'–':p.toFixed(1)+'%');};
-  const pctSty=v=>{if(v===null||v===undefined)return'';const p=v*100;return p>0.05?'color:#1a8f3c;font-weight:700':p<-0.05?'color:#C8102E;font-weight:700':'color:#888';};
 
-  const css=`*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Sarabun','Tahoma',sans-serif;background:#f0f0f3;color:#1a1a1a;font-size:13px;}
-.wrap{max-width:1200px;margin:0 auto;padding:0 24px;}
-header{background:linear-gradient(120deg,${brandDk} 0%,${brand} 60%,${lightenColor(brand,0.2)} 100%);color:#fff;padding:24px 0 20px;margin-bottom:24px;}
-header h1{font-size:28px;font-weight:900;}.sub{font-size:13px;opacity:.75;margin-top:4px;}.meta{font-size:11px;opacity:.6;margin-top:8px;}
-.sec{background:#fff;border-radius:14px;padding:22px 24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
-.sec h2{font-size:16px;font-weight:800;color:${brand};border-bottom:2px solid ${brand};padding-bottom:8px;margin-bottom:14px;}
-.sec h3{font-size:13px;font-weight:800;color:${brand};border-left:3px solid ${brand};padding-left:8px;margin:16px 0 8px;}
-.krow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
-.kpi{background:#f8f8f8;border-left:4px solid ${brand};border-radius:8px;padding:10px 14px;min-width:140px;}
-.kv{font-size:20px;font-weight:800;}.kl{font-size:11px;color:#888;margin-top:2px;}
-.tw{overflow-x:auto;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-th{background:${brand};color:#fff;font-weight:700;padding:8px 9px;text-align:right;border:1px solid ${brandDk};white-space:nowrap;}
-th.l{text-align:left;}td{padding:7px 9px;text-align:right;border:1px solid #e6e6ea;}
-td.l{text-align:left;font-weight:600;background:#fafafa;}
-tr:nth-child(even) td{background:#fbfbfc;}tr:nth-child(even) td.l{background:#f3f3f5;}
-tr.tot td{background:${brand}!important;color:#fff!important;font-weight:800;border-color:${brandDk}!important;}
-footer{text-align:center;padding:20px;font-size:11px;color:#888;margin-top:8px;}
-@media print{body{background:#fff;}.sec{box-shadow:none;border:1px solid #eee;page-break-inside:avoid;}}`;
+  // Get full CSS and patch brand variables + add export-only overrides
+  const styleEl=Array.from(document.querySelectorAll('style')).find(el=>el.textContent.includes('--brand'));
+  let css=(styleEl?styleEl.textContent:'').replace(/:root\{[\s\S]*?\}/,
+    `:root{--brand:${brand};--brand-dark:${brandDk};--brand-light:${brandLt};--ink:#1A1A1A;--bg:#f0f0f3;--card:#fff;--mut:#8a8a93;--line:#e6e6ea;--ok:#1a8f3c;--warn:#f39c12;--err:#C8102E;}`);
+  css+=`\n.hd-actions{display:none!important;}
+.export-banner{background:${brandLt};border-left:4px solid ${brand};padding:10px 28px;font-size:12px;color:${brandDk};font-weight:600;letter-spacing:.2px;}
+.export-banner span{opacity:.7;font-weight:400;}`;
 
-  let body='';
+  // KPIs for header
+  const fN=n=>(n||0).toLocaleString('en-US');
+  const kpisHtml=[
+    [fN(D.s1&&D.s1.total_active),'สมาชิก ACTIVE ทั้งหมด','คน'],
+    ['฿'+fN(D.s3&&D.s3.grand),'ยอดขายรวม','บาท (THB)'],
+    [fN(D.s4b&&D.s4b.grand),'คะแนนรวมทุกแหล่ง','แต้ม (รวม Welcome)'],
+    [fN(D.s5&&D.s5.total_count),'การแลกของรางวัล',fN(D.s5&&D.s5.total_pts)+' แต้ม'],
+  ].map(k=>`<div class="kpi"><div class="lab">${k[1]}</div><div class="val">${k[0]}</div><div class="unit">${k[2]}</div></div>`).join('');
+  const drLabel=sett.dateRange?'ข้อมูล '+sett.dateRange:(D.s3&&D.s3.months.length?`ข้อมูล ${ML[D.s3.months[0]]||D.s3.months[0]} – ${ML[D.s3.months[D.s3.months.length-1]]||D.s3.months[D.s3.months.length-1]}`:'');
 
-  if(D.s1){const s=D.s1;
-    body+=`<div class="sec"><h2>1. New User Registration (ACTIVE)</h2>
-    <div class="krow"><div class="kpi"><div class="kv">${f(s.total_active)}</div><div class="kl">สมาชิก ACTIVE รวม</div></div>
-    <div class="kpi"><div class="kv">${f(Math.max(...s.active))}</div><div class="kl">เดือนสูงสุด</div></div>
-    <div class="kpi"><div class="kv">${f(Math.round(s.total_active/s.months.length))}</div><div class="kl">เฉลี่ยต่อเดือน</div></div></div>
-    <div class="tw"><table><tr><th class="l">เดือน</th><th>สมาชิกใหม่ (ACTIVE)</th><th>%Ch</th></tr>
-    ${s.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td><td>${f(s.active[i])}</td><td style="${pctSty(s.pch[i])}">${pctTxt(s.pch[i])}</td></tr>`).join('')}
-    <tr class="tot"><td class="l">รวม</td><td>${f(s.total_active)}</td><td>–</td></tr></table></div></div>`;}
+  // Embed all data + render functions as script
+  const embJS=[
+    'const D='+JSON.stringify(D).replace(/<\/script>/gi,'<\\/script>')+';',
+    'const S='+JSON.stringify(sett)+';',
+    'const CHART_COLORS='+JSON.stringify(CHART_COLORS)+';',
+    'const CH_KEYS='+JSON.stringify(CH_KEYS)+';',
+    'const SC_KEYS='+JSON.stringify(SC_KEYS)+';',
+    'const ML='+JSON.stringify(ML)+';',
+    'let chartInstances={};',
+    'Chart.defaults.font.family="\'Sarabun\',\'Tahoma\',sans-serif";Chart.defaults.font.size=11;',
+    darkenColor.toString(),
+    lightenColor.toString(),
+    'function getBrandColor(){return S.color||"#004EE6";}',
+    'const fmt='+fmt.toString()+';',
+    'const pchCell='+pchCell.toString()+';',
+    'const thC='+thC.toString()+';',
+    'const chTh='+chTh.toString()+';',
+    'function stat(val,lbl,accent){accent=accent||(S&&S.color)||"#004EE6";return`<div class="stat" style="border-left-color:${accent}"><div class="stat-val">${val}</div><div class="stat-lbl">${lbl}</div></div>`;}',
+    destroyCharts.toString(),
+    mkChart.toString(),
+    setPanelContent.toString(),
+    buildRewardPivot.toString(),
+    renderP2.toString(),
+    renderP3.toString(),
+    renderP4.toString(),
+    renderP5.toString(),
+    // Simplified switchTab: panels p2-p5 = indices 0-3
+    'function switchTab(n){document.querySelectorAll(".panel").forEach((p,i)=>p.classList.toggle("active",i===n-2));document.querySelectorAll(".tabs button").forEach((b,i)=>b.classList.toggle("active",i===n-2));}',
+    // Init
+    'document.addEventListener("DOMContentLoaded",()=>{'+
+      'const br=S.color||"#004EE6";'+
+      'document.documentElement.style.setProperty("--brand",br);'+
+      'document.documentElement.style.setProperty("--brand-dark",darkenColor(br,0.25));'+
+      'document.documentElement.style.setProperty("--brand-light",lightenColor(br,0.9));'+
+      'document.getElementById("appHeader").style.background="linear-gradient(120deg,"+darkenColor(br,0.3)+" 0%,"+br+" 60%,"+lightenColor(br,0.2)+" 100%)";'+
+      'renderP2();renderP3();renderP4();renderP5();switchTab(2);'+
+    '});',
+  ].join('\n');
 
-  if(D.s3){const s=D.s3;const uk=CH_KEYS.filter(k=>s.data[k]&&s.totals[k]>0);
-    body+=`<div class="sec"><h2>2. Sales Report (THB)</h2>
-    <div class="krow"><div class="kpi"><div class="kv">฿${f(s.grand)}</div><div class="kl">ยอดขายรวม</div></div>
-    ${uk.map(k=>`<div class="kpi"><div class="kv">฿${f(s.totals[k])}</div><div class="kl">${k}</div></div>`).join('')}</div>
-    <div class="tw"><table><tr><th class="l">เดือน</th>${uk.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม (THB)</th><th>%Ch</th></tr>
-    ${s.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${uk.map(k=>`<td>${f(s.data[k][i])}</td>`).join('')}<td><b>${f(s.total[i])}</b></td><td style="${pctSty(s.pch[i])}">${pctTxt(s.pch[i])}</td></tr>`).join('')}
-    <tr class="tot"><td class="l">รวม</td>${uk.map(k=>`<td>${f(s.totals[k])}</td>`).join('')}<td>${f(s.grand)}</td><td>–</td></tr></table></div></div>`;}
+  const panelsHtml=`
+<!-- PANEL 1: NEW USER -->
+<div class="panel" id="p2">
+<div class="card">
+  <div class="sh"><span class="snum">1</span><span class="stitle">New User Registration</span><span class="sen">ผู้ใช้รายใหม่ (ACTIVE)</span></div>
+  <div class="desc">จำนวนผู้ใช้ใหม่สถานะ <b>ACTIVE</b> จัดกลุ่มตาม Register Date — ไม่รวมเดือนปัจจุบันที่ข้อมูลยังไม่ครบ</div>
+  <div id="p2_empty" class="empty-state" style="display:none"><div class="es-icon">👥</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p2_content" style="display:none"><div class="stat-row" id="kpi1"></div><div class="chartbox"><canvas id="c1"></canvas></div><div class="tbl-wrap"><div id="t1"></div></div><div class="note" id="n1"></div></div>
+</div></div>
+<!-- PANEL 2: SALES -->
+<div class="panel" id="p3">
+<div class="card">
+  <div class="sh"><span class="snum">2</span><span class="stitle">Sales Report</span><span class="sen">ยอดขาย (THB) แยกตามช่องทาง</span></div>
+  <div class="desc">ยอดขาย (บาท) จาก Point Report เฉพาะ Point type = <b>GIVEN</b></div>
+  <div id="p3_empty" class="empty-state" style="display:none"><div class="es-icon">💰</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p3_content" style="display:none"><div class="stat-row" id="kpi3"></div><div class="chartbox"><canvas id="c3"></canvas></div><div class="tbl-wrap"><div id="t3"></div></div></div>
+</div></div>
+<!-- PANEL 3: POINTS -->
+<div class="panel" id="p4">
+<div class="card">
+  <div class="sh"><span class="snum">3</span><span class="stitle">Points Report</span><span class="sen">คะแนนสะสม (GIVEN)</span></div>
+  <div id="p4_empty" class="empty-state" style="display:none"><div class="es-icon">⭐</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p4_content" style="display:none">
+    <div class="stat-row" id="kpi4"></div>
+    <div class="subhd">3.1 · คะแนนตามช่องทาง</div><div class="desc">คะแนนที่แจก (GIVEN) แยกตามช่องทาง — ไม่รวม Welcome Point</div>
+    <div class="chartbox sm"><canvas id="c4a"></canvas></div><div class="tbl-wrap"><div id="t4a"></div></div>
+    <div class="subhd">3.2 · คะแนนแยกตามแหล่งที่มาทั้งหมด</div><div class="desc">รวมทุกแหล่ง รวมถึง <b>Welcome Point</b></div>
+    <div class="chartbox sm"><canvas id="c4b"></canvas></div><div class="tbl-wrap"><div id="t4b"></div></div>
+    <div class="note" id="n4"></div>
+  </div>
+</div></div>
+<!-- PANEL 4: REDEMPTION -->
+<div class="panel" id="p5">
+<div class="card">
+  <div class="sh"><span class="snum">4</span><span class="stitle">Redemption Report</span><span class="sen">การแลกของรางวัล</span></div>
+  <div class="desc">จำนวนการแลกของรางวัล + เปรียบเทียบ Give Points กับ Used Points</div>
+  <div id="p5_empty" class="empty-state" style="display:none"><div class="es-icon">🎁</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p5_content" style="display:none">
+    <div class="stat-row" id="kpi5"></div>
+    <div class="grid2"><div class="chartbox sm"><canvas id="c5a"></canvas></div><div class="chartbox sm"><canvas id="c5b"></canvas></div></div>
+    <div class="tbl-wrap"><div id="t5"></div></div>
+    <div class="subhd">4.2 · ของรางวัลยอดนิยม <span id="pivotModeLabel" style="font-size:11px;font-weight:400;color:var(--mut);"></span></div>
+    <div class="tbl-wrap"><div id="t5r"></div></div>
+  </div>
+</div></div>`;
 
-  if(D.s4a){const a=D.s4a,b=D.s4b;const ak=CH_KEYS.filter(k=>a.data[k]&&a.totals[k]>0);const bk=(b.sckeys||SC_KEYS).filter(k=>b.data[k]&&b.totals[k]>0);const wp=b.totals['Welcome Point']||0;
-    body+=`<div class="sec"><h2>3. Points Report</h2>
-    <div class="krow"><div class="kpi"><div class="kv">${f(a.grand)}</div><div class="kl">คะแนน 3.1 (ช่องทาง)</div></div><div class="kpi"><div class="kv">${f(b.grand)}</div><div class="kl">คะแนน 3.2 (ทุกแหล่ง)</div></div><div class="kpi"><div class="kv">${f(wp)}</div><div class="kl">Welcome Point</div></div></div>
-    <h3>3.1 · คะแนนตามช่องทาง</h3>
-    <div class="tw"><table><tr><th class="l">เดือน</th>${ak.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม</th><th>%Ch</th></tr>
-    ${a.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${ak.map(k=>`<td>${f(a.data[k][i])}</td>`).join('')}<td><b>${f(a.total[i])}</b></td><td style="${pctSty(a.pch[i])}">${pctTxt(a.pch[i])}</td></tr>`).join('')}
-    <tr class="tot"><td class="l">รวม</td>${ak.map(k=>`<td>${f(a.totals[k])}</td>`).join('')}<td>${f(a.grand)}</td><td>–</td></tr></table></div>
-    <h3>3.2 · คะแนนแยกตามแหล่งที่มาทั้งหมด</h3>
-    <div class="tw"><table><tr><th class="l">เดือน</th>${bk.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม</th><th>%Ch</th></tr>
-    ${b.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${bk.map(k=>`<td>${f(b.data[k][i])}</td>`).join('')}<td><b>${f(b.total[i])}</b></td><td style="${pctSty(b.pch[i])}">${pctTxt(b.pch[i])}</td></tr>`).join('')}
-    <tr class="tot"><td class="l">รวม</td>${bk.map(k=>`<td>${f(b.totals[k])}</td>`).join('')}<td>${f(b.grand)}</td><td>–</td></tr></table></div></div>`;}
-
-  if(D.s5){const s=D.s5;const gm={};if(D.s4b&&D.s4b.months){D.s4b.months.forEach((m,i)=>{gm[m]=D.s4b.total[i];});}
-    const gv=s.months.map(m=>gm[m]||0);const tg=gv.reduce((a,b)=>a+b,0);const tu=s.pts_point.reduce((a,b)=>a+b,0);
-    const pv=buildRewardPivot(s);
-    body+=`<div class="sec"><h2>4. Redemption Report</h2>
-    <div class="krow"><div class="kpi"><div class="kv">${f(s.total_count)}</div><div class="kl">การแลกทั้งหมด</div></div><div class="kpi"><div class="kv">${f(tu)}</div><div class="kl">Used Points</div></div><div class="kpi"><div class="kv">${tg>0?(tu/tg*100).toFixed(1)+'%':'–'}</div><div class="kl">Used/Give Rate</div></div></div>
-    <div class="tw"><table><tr><th class="l">เดือน</th><th style="background:#3A4DA0;border-color:#2a3d90">Give Points</th><th style="background:#7B1E26;border-color:#6b0e16">Used Points</th><th>%Ch</th><th style="background:#1A1A1A;border-color:#000">จำนวนที่แลก</th><th>%Ch</th><th>Used/Give %</th></tr>
-    ${s.months.map((m,i)=>{const g=gv[i]||0,u=s.pts_point[i]||0,pu=i>0?s.pts_point[i-1]:null;return`<tr><td class="l">${ML[m]||m}</td><td>${f(g)}</td><td>${f(u)}</td><td style="${pctSty(pu!==null&&pu!==0?(u-pu)/pu:null)}">${pctTxt(pu!==null&&pu!==0?(u-pu)/pu:null)}</td><td>${f(s.count[i])}</td><td style="${pctSty(s.count_pch[i])}">${pctTxt(s.count_pch[i])}</td><td>${g>0?(u/g*100).toFixed(1)+'%':'–'}</td></tr>`;}).join('')}
-    <tr class="tot"><td class="l">รวม</td><td>${f(tg)}</td><td>${f(tu)}</td><td>–</td><td>${f(s.total_count)}</td><td>–</td><td>${tg>0?(tu/tg*100).toFixed(1)+'%':'–'}</td></tr></table></div>
-    <h3>4.2 · ของรางวัลยอดนิยม ${pv.isQuarterly?'(รายไตรมาส)':'(รายเดือน)'}</h3>
-    <div class="tw"><table><tr><th class="l">ของรางวัล</th>${pv.cols.map((c,i)=>`<th>${pv.colLabels[i]}</th>`).join('')}<th>รวม</th></tr>
-    ${pv.rdList.map(([n,d])=>{const t=Object.values(d).reduce((a,b)=>a+b,0);return`<tr><td class="l">${n}</td>${pv.cols.map(c=>`<td>${d[c]||'–'}</td>`).join('')}<td><b>${t}</b></td></tr>`;}).join('')}
-    <tr class="tot"><td class="l">รวม</td>${pv.cols.map(c=>`<td>${pv.countByCol[c]||0}</td>`).join('')}<td>${s.total_count}</td></tr></table></div></div>`;}
-
-  const html=`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${storeName} — Dashboard Report</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>${css}</style></head><body>
-<header><div class="wrap"><h1>${storeName}</h1>${tagline?`<div class="sub">${tagline}</div>`:''}<div class="meta">📊 Export วันที่ ${exportDate} · Loyalty Dashboard Pro</div></div></header>
-<div class="wrap">${body}<footer>© ${new Date().getFullYear()} Rocket Innovation Dashboard · จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</footer></div></body></html>`;
+  const yr=new Date().getFullYear();
+  const html=`<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${storeName} — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>${css}</style>
+</head>
+<body>
+<header id="appHeader">
+<div class="wrap">
+  <div class="hd-top">
+    <div class="logo-area">
+      <img id="logoImg" src="${logo}" alt="Logo" style="height:65px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));border-radius:8px;object-fit:contain;background:rgba(255,255,255,.15);">
+      <div class="logo-box">
+        <div id="storeName" style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;font-family:'Segoe UI',sans-serif;">${storeName}</div>
+        <div class="logo-tag">${tagline}</div>
+      </div>
+    </div>
+    <div class="hd-meta">
+      <div class="brand">ROCKET LOYALTY CRM</div>
+      <h1>Loyalty Dashboard Pro</h1>
+      <div class="sub">${drLabel}</div>
+    </div>
+  </div>
+  <div class="kpis">${kpisHtml}</div>
+</div>
+</header>
+<div class="tabs" id="tabBar">
+  <button onclick="switchTab(2)"><span class="tnum">1</span> สมาชิกใหม่</button>
+  <button onclick="switchTab(3)"><span class="tnum">2</span> Sales Report</button>
+  <button onclick="switchTab(4)"><span class="tnum">3</span> Points Report</button>
+  <button onclick="switchTab(5)"><span class="tnum">4</span> Redemption</button>
+</div>
+<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
+<div class="content">${panelsHtml}</div>
+<footer>
+<b>วิธีคำนวณ:</b> %Ch = (เดือนนี้ − เดือนก่อนหน้า) ÷ เดือนก่อนหน้า &nbsp;|&nbsp; New User: Status=ACTIVE &nbsp;|&nbsp; Sales/Points: Point type=GIVEN<br>
+<div style="margin-top:10px;padding-top:10px;border-top:1px solid #222;color:#888;">© ${yr} Rocket Innovation Dashboard &nbsp;·&nbsp; จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</div>
+</footer>
+<script>${embJS}<\/script>
+</body></html>`;
 
   const blob=new Blob([html],{type:'text/html;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=storeName.replace(/[^\w฀-๿]/g,'_')+'_report_'+new Date().toISOString().split('T')[0]+'.html';
+  a.download=storeName.replace(/[^\w฀-๿]/g,'_')+'_dashboard_'+new Date().toISOString().split('T')[0]+'.html';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
 }
 
