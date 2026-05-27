@@ -186,6 +186,11 @@ tr.tot td{background:var(--brand)!important;color:#fff;font-weight:800;border-co
 .copy-btn{font-size:10px;background:#004EE6;color:#fff;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;float:right;margin-top:-4px;}
 
 footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#666;line-height:1.8;}
+/* CRUD section */
+.crud-card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid var(--ok);margin-bottom:16px;}
+.crud-card .sh{border-bottom-color:var(--ok);}
+.crud-card .snum{background:var(--ok);}
+.crud-log{font-size:11px;background:#f0faf2;border-radius:8px;padding:10px;margin-top:10px;line-height:1.8;max-height:72px;overflow-y:auto;}
 @media(max-width:900px){.grid2,.upload-grid{grid-template-columns:1fr;}.kpis,.db-summary{grid-template-columns:repeat(2,1fr);}.settings-grid{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -417,21 +422,20 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
     <!-- Apps Script template -->
     <details style="margin-top:14px;">
-      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--brand);padding:6px 0;">📜 ดู Google Apps Script Template (คัดลอกไปใช้ได้เลย)</summary>
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--brand);padding:6px 0;">📜 ดู Google Apps Script Template v2 — รองรับ CRUD (คัดลอกไปใช้ได้เลย)</summary>
       <div class="script-box" id="gasTemplate">
-<span class="c-comment">// ════ Google Apps Script — Loyalty Dashboard Data Source ════</span>
-<span class="c-comment">// 1. เปิด Google Sheet ใหม่ → Extensions → Apps Script</span>
-<span class="c-comment">// 2. วาง code นี้ทั้งหมด → กด Run "setupSheets" ครั้งแรกเพื่อสร้าง Sheet+Headers</span>
+<span class="c-comment">// ════ Google Apps Script — Loyalty Dashboard v2 (Read + Write) ════</span>
+<span class="c-comment">// 1. เปิด Google Sheet → Extensions → Apps Script</span>
+<span class="c-comment">// 2. วาง code ทั้งหมด → Run "setupSheets" ครั้งแรก → สร้าง Sheets อัตโนมัติ</span>
 <span class="c-comment">// 3. Deploy → New Deployment → Web App → Execute as: Me, Access: Anyone → Copy URL</span>
+<span class="c-comment">// 4. ทุกครั้งที่แก้ code ต้อง Deploy version ใหม่เพื่ออัปเดต</span>
 
-<span class="c-comment">// ── Headers สำหรับแต่ละ Sheet ──</span>
 <span class="c-key">const</span> SHEET_HEADERS = {
-  <span class="c-str">"contacts"</span>:    [<span class="c-str">"Name"</span>,<span class="c-str">"Status"</span>,<span class="c-str">"Register Date"</span>,<span class="c-str">"Phone No"</span>,<span class="c-str">"Gender"</span>,<span class="c-str">"Tier"</span>,<span class="c-str">"Points balance"</span>],
-  <span class="c-str">"Point Report"</span>: [<span class="c-str">"Date & time"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>,<span class="c-str">"Point type"</span>,<span class="c-str">"Points collected"</span>,<span class="c-str">"Sale amount (THB)"</span>,<span class="c-str">"Source"</span>,<span class="c-str">"Channel"</span>,<span class="c-str">"Sub channel"</span>],
-  <span class="c-str">"Redemptions"</span>:  [<span class="c-str">"Date & time"</span>,<span class="c-str">"Reward name"</span>,<span class="c-str">"Reward code"</span>,<span class="c-str">"Points used"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>]
+  <span class="c-str">"contacts"</span>:     [<span class="c-str">"Name"</span>,<span class="c-str">"Status"</span>,<span class="c-str">"Register Date"</span>,<span class="c-str">"Phone No"</span>,<span class="c-str">"Gender"</span>,<span class="c-str">"Tier"</span>,<span class="c-str">"Points balance"</span>],
+  <span class="c-str">"Point Report"</span>:  [<span class="c-str">"Date & time"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>,<span class="c-str">"Point type"</span>,<span class="c-str">"Points collected"</span>,<span class="c-str">"Sale amount (THB)"</span>,<span class="c-str">"Source"</span>,<span class="c-str">"Channel"</span>,<span class="c-str">"Sub channel"</span>],
+  <span class="c-str">"Redemptions"</span>:   [<span class="c-str">"Date & time"</span>,<span class="c-str">"Reward name"</span>,<span class="c-str">"Reward code"</span>,<span class="c-str">"Points used"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>]
 };
 
-<span class="c-comment">// รัน function นี้ครั้งแรกเพื่อสร้าง Sheets + Headers อัตโนมัติ</span>
 <span class="c-key">function</span> setupSheets() {
   <span class="c-key">const</span> ss = SpreadsheetApp.getActiveSpreadsheet();
   Object.entries(SHEET_HEADERS).forEach(([name, headers]) => {
@@ -439,41 +443,72 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <span class="c-key">if</span> (!sh) { sh = ss.insertSheet(name); }
     <span class="c-key">if</span> (sh.getLastRow() === 0) {
       sh.appendRow(headers);
-      sh.getRange(1, 1, 1, headers.length).setFontWeight(<span class="c-str">"bold"</span>).setBackground(<span class="c-str">"#004EE6"</span>).setFontColor(<span class="c-str">"#ffffff"</span>);
+      sh.getRange(1,1,1,headers.length).setFontWeight(<span class="c-str">"bold"</span>).setBackground(<span class="c-str">"#004EE6"</span>).setFontColor(<span class="c-str">"#ffffff"</span>);
       sh.setFrozenRows(1);
     }
   });
-  SpreadsheetApp.getUi().alert(<span class="c-str">"✅ สร้าง Sheets สำเร็จ! พร้อมกรอกข้อมูลแล้ว"</span>);
+  SpreadsheetApp.getUi().alert(<span class="c-str">"✅ สร้าง Sheets สำเร็จ!"</span>);
 }
 
-<span class="c-comment">// Dashboard ดึงข้อมูลผ่าน URL นี้</span>
+<span class="c-comment">// Dashboard ดึง + เขียนข้อมูลผ่าน URL นี้ (?action=read|insert|delete)</span>
 <span class="c-key">function</span> doGet(e) {
+  <span class="c-key">const</span> action = (e.parameter && e.parameter.action) || <span class="c-str">"read"</span>;
   <span class="c-key">const</span> ss = SpreadsheetApp.getActiveSpreadsheet();
-  <span class="c-key">const</span> result = {
-    contacts:    getSheetData(ss, <span class="c-str">"contacts"</span>),
-    pointReport: getSheetData(ss, <span class="c-str">"Point Report"</span>),
-    redemptions: getSheetData(ss, <span class="c-str">"Redemptions"</span>),
-    exportedAt:  <span class="c-key">new</span> Date().toISOString()
-  };
-  <span class="c-key">return</span> ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+  <span class="c-key">if</span> (action === <span class="c-str">"read"</span>) {
+    <span class="c-key">return</span> jsonOut({
+      contacts:    getData(ss, <span class="c-str">"contacts"</span>),
+      pointReport: getData(ss, <span class="c-str">"Point Report"</span>),
+      redemptions: getData(ss, <span class="c-str">"Redemptions"</span>),
+      exportedAt:  <span class="c-key">new</span> Date().toISOString()
+    });
+  }
+  <span class="c-key">if</span> (action === <span class="c-str">"insert"</span>) {
+    <span class="c-key">const</span> sh = ss.getSheetByName(e.parameter.sheet);
+    <span class="c-key">if</span> (!sh) <span class="c-key">return</span> jsonOut({success:<span class="c-key">false</span>, error:<span class="c-str">"Sheet not found"</span>});
+    <span class="c-key">const</span> data = JSON.parse(e.parameter.data || <span class="c-str">"{}"</span>);
+    <span class="c-key">const</span> headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+    sh.appendRow(headers.map(h => data[h] !== undefined ? data[h] : <span class="c-str">""</span>));
+    <span class="c-key">return</span> jsonOut({success:<span class="c-key">true</span>, insertedAt:<span class="c-key">new</span> Date().toISOString()});
+  }
+  <span class="c-key">if</span> (action === <span class="c-str">"delete"</span>) {
+    <span class="c-key">const</span> sh = ss.getSheetByName(e.parameter.sheet);
+    <span class="c-key">if</span> (!sh) <span class="c-key">return</span> jsonOut({success:<span class="c-key">false</span>, error:<span class="c-str">"Sheet not found"</span>});
+    sh.deleteRow(parseInt(e.parameter.rowId) + 2); <span class="c-comment">// +1 header, +1 for 1-index</span>
+    <span class="c-key">return</span> jsonOut({success:<span class="c-key">true</span>});
+  }
+  <span class="c-key">return</span> jsonOut({error:<span class="c-str">"Unknown action"</span>});
 }
 
-<span class="c-key">function</span> getSheetData(ss, sheetName) {
+<span class="c-key">function</span> getData(ss, sheetName) {
   <span class="c-key">const</span> sh = ss.getSheetByName(sheetName);
   <span class="c-key">if</span> (!sh || sh.getLastRow() < 2) <span class="c-key">return</span> [];
-  <span class="c-key">const</span> data = sh.getDataRange().getValues();
-  <span class="c-key">const</span> headers = data[0];
-  <span class="c-key">return</span> data.slice(1).map(row => {
+  <span class="c-key">const</span> rows = sh.getDataRange().getValues();
+  <span class="c-key">const</span> headers = rows[0];
+  <span class="c-key">return</span> rows.slice(1).map(row => {
     <span class="c-key">const</span> obj = {};
-    headers.forEach((h, i) => { <span class="c-key">if</span>(h) obj[h] = row[i]; });
+    headers.forEach((h,i) => { <span class="c-key">if</span>(h) obj[h] = row[i]; });
     <span class="c-key">return</span> obj;
   }).filter(r => Object.values(r).some(v => v !== <span class="c-str">""</span>));
+}
+
+<span class="c-key">function</span> jsonOut(data) {
+  <span class="c-key">return</span> ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
       </div>
       <button class="copy-btn" onclick="copyGasCode()" style="margin-top:-30px;position:relative;z-index:1;">📋 คัดลอก</button>
     </details>
+  </div>
+
+  <!-- CRUD: Write to Google Sheets -->
+  <div class="crud-card" id="crudSection" style="display:none;">
+    <div class="sh" style="margin-bottom:14px;"><span class="snum">✏️</span><span class="stitle">เพิ่ม / ลบข้อมูลใน Sheets</span><span class="sen">เขียนตรงจาก Dashboard</span></div>
+    <div class="desc">เพิ่มข้อมูลใหม่เข้า Google Sheets โดยตรง — ข้อมูลจะปรากฏใน Sheet ทันที แล้ว Dashboard จะ Sync อัตโนมัติ<br>ต้อง Deploy Apps Script Template v2 ข้างต้นก่อน</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn btn-primary" onclick="openAddModal('contact')">👤 เพิ่มสมาชิก</button>
+      <button class="btn btn-primary" onclick="openAddModal('point')">⭐ เพิ่ม Transaction</button>
+      <button class="btn btn-primary" onclick="openAddModal('redemption')">🎁 เพิ่มการแลก</button>
+    </div>
+    <div class="crud-log" id="crudLog" style="display:none;"></div>
   </div>
 
   <!-- Clear Data -->
@@ -574,6 +609,75 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
 </div><!-- /content -->
 
+<!-- ADD CONTACT MODAL -->
+<div class="modal-overlay" id="addContactModal">
+  <div class="modal" style="max-width:500px;">
+    <h2>👤 เพิ่มสมาชิกใหม่</h2>
+    <div class="form-group"><div class="form-label">ชื่อสมาชิก</div><input type="text" class="form-input" id="ci_name" placeholder="ชื่อ-นามสกุล"></div>
+    <div class="form-group"><div class="form-label">Status</div>
+      <select class="form-input" id="ci_status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></div>
+    <div class="form-group"><div class="form-label">Register Date</div><input type="date" class="form-input" id="ci_regdate"></div>
+    <div class="form-group"><div class="form-label">Phone No</div><input type="text" class="form-input" id="ci_phone" placeholder="0812345678"></div>
+    <div class="form-group"><div class="form-label">Gender</div>
+      <select class="form-input" id="ci_gender"><option value="">ไม่ระบุ</option><option value="M">M (ชาย)</option><option value="F">F (หญิง)</option></select></div>
+    <div class="form-group"><div class="form-label">Tier</div><input type="text" class="form-input" id="ci_tier" placeholder="Bronze / Silver / Gold"></div>
+    <div class="form-group"><div class="form-label">Points balance</div><input type="number" class="form-input" id="ci_pts" value="0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal('contact')">ยกเลิก</button>
+      <button class="btn btn-primary" id="submitContactBtn" onclick="submitAdd('contact')">💾 บันทึกลง Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD POINT TRANSACTION MODAL -->
+<div class="modal-overlay" id="addPointModal">
+  <div class="modal" style="max-width:500px;">
+    <h2>⭐ เพิ่ม Point Transaction</h2>
+    <div class="form-group"><div class="form-label">Date &amp; time</div><input type="datetime-local" class="form-input" id="pi_dt"></div>
+    <div class="form-group"><div class="form-label">Member name</div><input type="text" class="form-input" id="pi_name" placeholder="ชื่อสมาชิก"></div>
+    <div class="form-group"><div class="form-label">Member tel</div><input type="text" class="form-input" id="pi_tel" placeholder="0812345678"></div>
+    <div class="form-group"><div class="form-label">Point type</div>
+      <select class="form-input" id="pi_type">
+        <option value="GIVEN">GIVEN</option>
+        <option value="REDEEMED">REDEEMED</option>
+        <option value="WELCOME POINT">WELCOME POINT</option>
+        <option value="Invite Friend Collect">Invite Friend Collect</option>
+      </select></div>
+    <div class="form-group"><div class="form-label">Points collected</div><input type="number" class="form-input" id="pi_pts" value="0"></div>
+    <div class="form-group"><div class="form-label">Sale amount (THB)</div><input type="number" class="form-input" id="pi_sale" value="0"></div>
+    <div class="form-group"><div class="form-label">Source</div><input type="text" class="form-input" id="pi_source" placeholder="Third Party / Loyalty Manual / ..."></div>
+    <div class="form-group"><div class="form-label">Channel</div>
+      <select class="form-input" id="pi_channel">
+        <option value="">ไม่ระบุ</option>
+        <option value="TikTok">TikTok</option><option value="Shopee">Shopee</option>
+        <option value="Lazada">Lazada</option><option value="Loyalty Manual">Loyalty Manual</option>
+        <option value="Upload Receipt">Upload Receipt</option>
+      </select></div>
+    <div class="form-group"><div class="form-label">Sub channel <span style="font-weight:400;color:#aaa;">(optional)</span></div><input type="text" class="form-input" id="pi_subchannel" placeholder="ช่องทางย่อย"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal('point')">ยกเลิก</button>
+      <button class="btn btn-primary" id="submitPointBtn" onclick="submitAdd('point')">💾 บันทึกลง Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD REDEMPTION MODAL -->
+<div class="modal-overlay" id="addRedemptionModal">
+  <div class="modal" style="max-width:500px;">
+    <h2>🎁 เพิ่มการแลกของรางวัล</h2>
+    <div class="form-group"><div class="form-label">Date &amp; time</div><input type="datetime-local" class="form-input" id="ri_dt"></div>
+    <div class="form-group"><div class="form-label">Reward name</div><input type="text" class="form-input" id="ri_reward" placeholder="ชื่อของรางวัล"></div>
+    <div class="form-group"><div class="form-label">Reward code <span style="font-weight:400;color:#aaa;">(optional)</span></div><input type="text" class="form-input" id="ri_code" placeholder="รหัสของรางวัล"></div>
+    <div class="form-group"><div class="form-label">Points used</div><input type="number" class="form-input" id="ri_pts" value="0"></div>
+    <div class="form-group"><div class="form-label">Member name</div><input type="text" class="form-input" id="ri_name" placeholder="ชื่อสมาชิก"></div>
+    <div class="form-group"><div class="form-label">Member tel</div><input type="text" class="form-input" id="ri_tel" placeholder="0812345678"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal('redemption')">ยกเลิก</button>
+      <button class="btn btn-primary" id="submitRedemptionBtn" onclick="submitAdd('redemption')">💾 บันทึกลง Sheets</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLEAR MODAL -->
 <div class="modal-overlay" id="clearModal">
   <div class="modal">
@@ -633,7 +737,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   loadStoredData();
   loadApiUrl();
   updateDbSummary();
+  updateCrudSection();
   document.getElementById('footerYear').textContent = new Date().getFullYear();
+  // Auto-sync from Google Sheets on load if URL is configured
+  const savedUrl=localStorage.getItem('ld_api_url')||'';
+  if(savedUrl){
+    addLog('info','🔄 Auto-sync จาก Google Sheets...');
+    syncFromApi();
+  }
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -1351,6 +1462,7 @@ function saveApiUrl(){
   const url=document.getElementById('apiUrlInput').value.trim();
   localStorage.setItem('ld_api_url',url);
   addLog('info','✓ บันทึก URL แล้ว: '+url.substring(0,60)+'...');
+  updateCrudSection();
 }
 
 async function syncFromApi(){
@@ -1392,6 +1504,130 @@ function addLog(type, msg){
   const ts=new Date().toLocaleTimeString('th-TH');
   log.innerHTML+=`<div class="log-${type}">[${ts}] ${msg}</div>`;
   log.scrollTop=log.scrollHeight;
+}
+
+// ════════════════════════════════════════════════════════════════
+// GOOGLE SHEETS CRUD
+// ════════════════════════════════════════════════════════════════
+function updateCrudSection(){
+  const url=localStorage.getItem('ld_api_url')||'';
+  const sec=document.getElementById('crudSection');
+  if(sec) sec.style.display=url?'block':'none';
+}
+
+function addCrudLog(type,msg){
+  const log=document.getElementById('crudLog');
+  if(!log) return;
+  log.style.display='block';
+  const ts=new Date().toLocaleTimeString('th-TH');
+  log.innerHTML=`<div class="log-${type}">[${ts}] ${msg}</div>`;
+}
+
+async function writeToSheet(action,sheet,data){
+  const url=localStorage.getItem('ld_api_url')||'';
+  if(!url){addCrudLog('err','❌ กรุณาบันทึก Google Apps Script URL ก่อน');return false;}
+  addCrudLog('info','⏳ กำลังเขียนข้อมูลเข้า Google Sheets...');
+  const params=new URLSearchParams({action,sheet});
+  if(data) params.append('data',JSON.stringify(data));
+  try{
+    const res=await fetch(url+'?'+params.toString());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    if(json.error) throw new Error(json.error);
+    addCrudLog('ok','✅ บันทึกสำเร็จ กำลัง Sync Dashboard...');
+    return true;
+  }catch(err){
+    addCrudLog('err','❌ เขียนไม่สำเร็จ: '+err.message);
+    return false;
+  }
+}
+
+function openAddModal(type){
+  const now=new Date();
+  const dtLocal=now.toISOString().slice(0,16);
+  const dateOnly=now.toISOString().slice(0,10);
+  if(type==='contact'){
+    document.getElementById('ci_regdate').value=dateOnly;
+    document.getElementById('ci_name').value='';
+    document.getElementById('ci_phone').value='';
+    document.getElementById('ci_tier').value='';
+    document.getElementById('ci_pts').value='0';
+    document.getElementById('addContactModal').classList.add('show');
+  }else if(type==='point'){
+    document.getElementById('pi_dt').value=dtLocal;
+    document.getElementById('pi_name').value='';
+    document.getElementById('pi_tel').value='';
+    document.getElementById('pi_pts').value='0';
+    document.getElementById('pi_sale').value='0';
+    document.getElementById('pi_source').value='';
+    document.getElementById('pi_subchannel').value='';
+    document.getElementById('addPointModal').classList.add('show');
+  }else if(type==='redemption'){
+    document.getElementById('ri_dt').value=dtLocal;
+    document.getElementById('ri_reward').value='';
+    document.getElementById('ri_code').value='';
+    document.getElementById('ri_pts').value='0';
+    document.getElementById('ri_name').value='';
+    document.getElementById('ri_tel').value='';
+    document.getElementById('addRedemptionModal').classList.add('show');
+  }
+}
+
+function closeAddModal(type){
+  const ids={contact:'addContactModal',point:'addPointModal',redemption:'addRedemptionModal'};
+  document.getElementById(ids[type]).classList.remove('show');
+}
+
+async function submitAdd(type){
+  let sheet,data,btnId;
+  if(type==='contact'){
+    sheet='contacts'; btnId='submitContactBtn';
+    const d=document.getElementById('ci_regdate').value;
+    data={
+      'Name':document.getElementById('ci_name').value,
+      'Status':document.getElementById('ci_status').value,
+      'Register Date':d?new Date(d).toLocaleDateString('en-GB'):'',
+      'Phone No':document.getElementById('ci_phone').value,
+      'Gender':document.getElementById('ci_gender').value,
+      'Tier':document.getElementById('ci_tier').value,
+      'Points balance':Number(document.getElementById('ci_pts').value)||0
+    };
+  }else if(type==='point'){
+    sheet='Point Report'; btnId='submitPointBtn';
+    const dt=new Date(document.getElementById('pi_dt').value);
+    data={
+      'Date & time':dt.toLocaleDateString('en-GB')+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+      'Member name':document.getElementById('pi_name').value,
+      'Member tel':document.getElementById('pi_tel').value,
+      'Point type':document.getElementById('pi_type').value,
+      'Points collected':Number(document.getElementById('pi_pts').value)||0,
+      'Sale amount (THB)':Number(document.getElementById('pi_sale').value)||0,
+      'Source':document.getElementById('pi_source').value,
+      'Channel':document.getElementById('pi_channel').value,
+      'Sub channel':document.getElementById('pi_subchannel').value
+    };
+  }else if(type==='redemption'){
+    sheet='Redemptions'; btnId='submitRedemptionBtn';
+    const dt=new Date(document.getElementById('ri_dt').value);
+    data={
+      'Date & time':dt.toLocaleDateString('en-GB')+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+      'Reward name':document.getElementById('ri_reward').value,
+      'Reward code':document.getElementById('ri_code').value,
+      'Points used':Number(document.getElementById('ri_pts').value)||0,
+      'Member name':document.getElementById('ri_name').value,
+      'Member tel':document.getElementById('ri_tel').value
+    };
+  }
+  const btn=document.getElementById(btnId);
+  const origLabel=btn.textContent;
+  btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
+  const ok=await writeToSheet('insert',sheet,data);
+  btn.disabled=false; btn.textContent=origLabel;
+  if(ok){
+    closeAddModal(type);
+    addLog('info','⏳ Sync ข้อมูลใหม่จาก Sheets...');
+    await syncFromApi();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
