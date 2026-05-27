@@ -300,8 +300,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <div class="panel" id="p1">
   <div class="db-header">
     <h2>🗄️ ฐานข้อมูล & อัปโหลดไฟล์</h2>
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-ok" onclick="recomputeAndRender()">🔄 คำนวณใหม่</button>
+      <button class="btn btn-primary" onclick="exportAsHTML()" style="background:#1a8f3c;border-color:#1a8f3c;">📄 Export HTML</button>
       <button class="btn btn-danger" onclick="showClearModal()">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
   </div>
@@ -326,7 +327,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
         </div>
         <div class="dz-actions">
           <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file0').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(0)">📋 ดูเทมเพลท</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(0)">📥 Template .xlsx</button>
         </div>
         <div class="columns-badge" onclick="toggleColInfo(0)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop0">
@@ -355,7 +356,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
         </div>
         <div class="dz-actions">
           <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file1').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(1)">📋 ดูเทมเพลท</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(1)">📥 Template .xlsx</button>
         </div>
         <div class="columns-badge" onclick="toggleColInfo(1)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop1">
@@ -387,7 +388,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
         </div>
         <div class="dz-actions">
           <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file2').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(2)">📋 ดูเทมเพลท</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(2)">📥 Template .xlsx</button>
         </div>
         <div class="columns-badge" onclick="toggleColInfo(2)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop2">
@@ -418,9 +419,34 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <details style="margin-top:14px;">
       <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--brand);padding:6px 0;">📜 ดู Google Apps Script Template (คัดลอกไปใช้ได้เลย)</summary>
       <div class="script-box" id="gasTemplate">
-<span class="c-comment">// Google Apps Script — วาง code นี้ใน Apps Script แล้ว Deploy เป็น Web App</span>
-<span class="c-comment">// ตั้ง "Who has access" เป็น Anyone</span>
+<span class="c-comment">// ════ Google Apps Script — Loyalty Dashboard Data Source ════</span>
+<span class="c-comment">// 1. เปิด Google Sheet ใหม่ → Extensions → Apps Script</span>
+<span class="c-comment">// 2. วาง code นี้ทั้งหมด → กด Run "setupSheets" ครั้งแรกเพื่อสร้าง Sheet+Headers</span>
+<span class="c-comment">// 3. Deploy → New Deployment → Web App → Execute as: Me, Access: Anyone → Copy URL</span>
 
+<span class="c-comment">// ── Headers สำหรับแต่ละ Sheet ──</span>
+<span class="c-key">const</span> SHEET_HEADERS = {
+  <span class="c-str">"contacts"</span>:    [<span class="c-str">"Name"</span>,<span class="c-str">"Status"</span>,<span class="c-str">"Register Date"</span>,<span class="c-str">"Phone No"</span>,<span class="c-str">"Gender"</span>,<span class="c-str">"Tier"</span>,<span class="c-str">"Points balance"</span>],
+  <span class="c-str">"Point Report"</span>: [<span class="c-str">"Date & time"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>,<span class="c-str">"Point type"</span>,<span class="c-str">"Points collected"</span>,<span class="c-str">"Sale amount (THB)"</span>,<span class="c-str">"Source"</span>,<span class="c-str">"Channel"</span>,<span class="c-str">"Sub channel"</span>],
+  <span class="c-str">"Redemptions"</span>:  [<span class="c-str">"Date & time"</span>,<span class="c-str">"Reward name"</span>,<span class="c-str">"Reward code"</span>,<span class="c-str">"Points used"</span>,<span class="c-str">"Member name"</span>,<span class="c-str">"Member tel"</span>]
+};
+
+<span class="c-comment">// รัน function นี้ครั้งแรกเพื่อสร้าง Sheets + Headers อัตโนมัติ</span>
+<span class="c-key">function</span> setupSheets() {
+  <span class="c-key">const</span> ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.entries(SHEET_HEADERS).forEach(([name, headers]) => {
+    <span class="c-key">let</span> sh = ss.getSheetByName(name);
+    <span class="c-key">if</span> (!sh) { sh = ss.insertSheet(name); }
+    <span class="c-key">if</span> (sh.getLastRow() === 0) {
+      sh.appendRow(headers);
+      sh.getRange(1, 1, 1, headers.length).setFontWeight(<span class="c-str">"bold"</span>).setBackground(<span class="c-str">"#004EE6"</span>).setFontColor(<span class="c-str">"#ffffff"</span>);
+      sh.setFrozenRows(1);
+    }
+  });
+  SpreadsheetApp.getUi().alert(<span class="c-str">"✅ สร้าง Sheets สำเร็จ! พร้อมกรอกข้อมูลแล้ว"</span>);
+}
+
+<span class="c-comment">// Dashboard ดึงข้อมูลผ่าน URL นี้</span>
 <span class="c-key">function</span> doGet(e) {
   <span class="c-key">const</span> ss = SpreadsheetApp.getActiveSpreadsheet();
   <span class="c-key">const</span> result = {
@@ -436,14 +462,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
 <span class="c-key">function</span> getSheetData(ss, sheetName) {
   <span class="c-key">const</span> sh = ss.getSheetByName(sheetName);
-  <span class="c-key">if</span> (!sh) <span class="c-key">return</span> [];
+  <span class="c-key">if</span> (!sh || sh.getLastRow() < 2) <span class="c-key">return</span> [];
   <span class="c-key">const</span> data = sh.getDataRange().getValues();
   <span class="c-key">const</span> headers = data[0];
   <span class="c-key">return</span> data.slice(1).map(row => {
     <span class="c-key">const</span> obj = {};
-    headers.forEach((h, i) => obj[h] = row[i]);
+    headers.forEach((h, i) => { <span class="c-key">if</span>(h) obj[h] = row[i]; });
     <span class="c-key">return</span> obj;
-  });
+  }).filter(r => Object.values(r).some(v => v !== <span class="c-str">""</span>));
 }
       </div>
       <button class="copy-btn" onclick="copyGasCode()" style="margin-top:-30px;position:relative;z-index:1;">📋 คัดลอก</button>
@@ -552,9 +578,10 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <div class="modal-overlay" id="clearModal">
   <div class="modal">
     <h2>⚠️ ยืนยันล้างข้อมูล</h2>
-    <p style="font-size:13px;line-height:1.7;color:#555;">คุณกำลังจะลบข้อมูล Excel ทั้งหมด:<br>
-    ✗ ข้อมูล Contacts<br>✗ ข้อมูล Point Report<br>✗ ข้อมูล Redemptions<br>✗ ข้อมูล Dashboard ที่คำนวณไว้<br><br>
-    <b>การตั้งค่าร้านค้า (ชื่อ/สี/โลโก้) จะยังคงอยู่</b></p>
+    <p style="font-size:13px;line-height:1.8;color:#555;">จะล้างข้อมูลทั้งหมดออกจากเบราว์เซอร์:<br>
+    ✗ ข้อมูล Contacts · Point Report · Redemptions<br>✗ ข้อมูล Dashboard ที่คำนวณไว้<br><br>
+    ✅ <b>การตั้งค่า (ชื่อ/สี/โลโก้) จะยังอยู่</b><br>
+    ✅ <b>Google Sheet ไม่ถูกลบ</b> — กด Sync อีกครั้งเพื่อโหลดข้อมูลกลับมา</p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="hideClearModal()">ยกเลิก</button>
       <button class="btn btn-danger" onclick="clearAllData()">🗑️ ยืนยันล้างข้อมูล</button>
@@ -699,6 +726,10 @@ function clearLogo(){
   localStorage.removeItem('ld_logo');
   document.getElementById('logoImg').src = 'https://rewarding-rocket.s3.ap-southeast-1.amazonaws.com/1743486056316-success%20copy%202%201.png';
   document.getElementById('logoPreviewBox').innerHTML = '<span style="font-size:24px">📷</span><span>คลิกเพื่ออัปโหลด</span>';
+}
+
+function getBrandColor(){
+  return getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||'#004EE6';
 }
 
 function darkenColor(hex, amount){
@@ -1139,7 +1170,7 @@ function renderP2(){
   setPanelContent('p2',true);
   const s=D.s1, lab=s.months.map(m=>ML[m]||m);
   mkChart('c1',{type:'bar',
-    data:{labels:lab,datasets:[{label:'สมาชิกใหม่ (ACTIVE)',data:s.active,backgroundColor:'#004EE6',borderRadius:4}]},
+    data:{labels:lab,datasets:[{label:'สมาชิกใหม่ (ACTIVE)',data:s.active,backgroundColor:getBrandColor(),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>fmt(v)}}}}
   });
   const max=Math.max(...s.active), imax=s.active.indexOf(max);
@@ -1283,29 +1314,29 @@ function renderP5(){
 // ════════════════════════════════════════════════════════════════
 function downloadTemplate(slot){
   const templates=[
-    {name:'template_contacts.csv',rows:[
+    {name:'template_contacts.xlsx',rows:[
       ['Name','Status','Register Date','Phone No','Gender','Tier','Points balance'],
       ['ตัวอย่าง สมาชิก','ACTIVE','2025-04-15 09:00:00','0812345678','FEMALE','Bronze','0'],
       ['อีกตัวอย่าง','ACTIVE','2025-05-01 10:00:00','0898765432','MALE','Silver','500'],
     ]},
-    {name:'template_point_report.csv',rows:[
+    {name:'template_point_report.xlsx',rows:[
       ['Date & time','Member name','Member tel','Point type','Points collected','Sale amount (THB)','Source','Channel','Sub channel'],
       ['2025-04-15 10:30:00','ตัวอย่าง สมาชิก','0812345678','GIVEN','10','500','Third Party','shopee','My Shop'],
       ['2025-04-16 14:00:00','สมาชิก ทดสอบ','0898765432','GIVEN','5','250','Third Party','tiktok','My Shop'],
       ['2025-04-17 09:00:00','ใหม่ สมาชิก','0871234567','GIVEN','1000','0','Welcome Point','',''],
       ['2025-04-20 15:00:00','ตัวอย่าง สมาชิก','0812345678','REDEEMED','-100','0','Redemption','',''],
     ]},
-    {name:'template_redemptions.csv',rows:[
+    {name:'template_redemptions.xlsx',rows:[
       ['Date & time','Reward name','Reward code','Points used','Member name','Member tel'],
       ['15/04/2025 10:00','ของรางวัล A','CODE001','100','ตัวอย่าง สมาชิก','0812345678'],
       ['20/04/2025 14:30','ของรางวัล B','CODE002','200','สมาชิก ทดสอบ','0898765432'],
     ]},
   ];
   const t=templates[slot];
-  const csv='﻿'+t.rows.map(r=>r.map(c=>c.includes(',')&&!c.startsWith('"')?'"'+c+'"':c).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=t.name;a.click();
+  const ws=XLSX.utils.aoa_to_sheet(t.rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Template');
+  XLSX.writeFile(wb,t.name);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1399,6 +1430,102 @@ function copyGasCode(){
     btn.textContent='✓ คัดลอกแล้ว!';
     setTimeout(()=>btn.textContent='📋 คัดลอก',2000);
   });
+}
+
+// ════════════════════════════════════════════════════════════════
+// EXPORT AS HTML
+// ════════════════════════════════════════════════════════════════
+function exportAsHTML(){
+  if(!D||Object.keys(D).length===0){
+    alert('ยังไม่มีข้อมูล กรุณาอัปโหลดหรือ Sync ก่อน');
+    return;
+  }
+  const s=JSON.parse(localStorage.getItem('ld_settings')||'{}');
+  const brand=s.color||'#004EE6';
+  const brandDk=darkenColor(brand,0.25);
+  const brandLt=lightenColor(brand,0.9);
+  const storeName=s.storeName||'Loyalty Dashboard';
+  const tagline=s.tagline||'';
+  const exportDate=new Date().toLocaleString('th-TH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const f=n=>(n||0).toLocaleString('en-US');
+  const pctTxt=v=>{if(v===null||v===undefined)return'–';const p=v*100;return(p>0.05?'▲ +':p<-0.05?'▼ ':'')+(!p?'–':p.toFixed(1)+'%');};
+  const pctSty=v=>{if(v===null||v===undefined)return'';const p=v*100;return p>0.05?'color:#1a8f3c;font-weight:700':p<-0.05?'color:#C8102E;font-weight:700':'color:#888';};
+
+  const css=`*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Sarabun','Tahoma',sans-serif;background:#f0f0f3;color:#1a1a1a;font-size:13px;}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px;}
+header{background:linear-gradient(120deg,${brandDk} 0%,${brand} 60%,${lightenColor(brand,0.2)} 100%);color:#fff;padding:24px 0 20px;margin-bottom:24px;}
+header h1{font-size:28px;font-weight:900;}.sub{font-size:13px;opacity:.75;margin-top:4px;}.meta{font-size:11px;opacity:.6;margin-top:8px;}
+.sec{background:#fff;border-radius:14px;padding:22px 24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.sec h2{font-size:16px;font-weight:800;color:${brand};border-bottom:2px solid ${brand};padding-bottom:8px;margin-bottom:14px;}
+.sec h3{font-size:13px;font-weight:800;color:${brand};border-left:3px solid ${brand};padding-left:8px;margin:16px 0 8px;}
+.krow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.kpi{background:#f8f8f8;border-left:4px solid ${brand};border-radius:8px;padding:10px 14px;min-width:140px;}
+.kv{font-size:20px;font-weight:800;}.kl{font-size:11px;color:#888;margin-top:2px;}
+.tw{overflow-x:auto;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.07);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:${brand};color:#fff;font-weight:700;padding:8px 9px;text-align:right;border:1px solid ${brandDk};white-space:nowrap;}
+th.l{text-align:left;}td{padding:7px 9px;text-align:right;border:1px solid #e6e6ea;}
+td.l{text-align:left;font-weight:600;background:#fafafa;}
+tr:nth-child(even) td{background:#fbfbfc;}tr:nth-child(even) td.l{background:#f3f3f5;}
+tr.tot td{background:${brand}!important;color:#fff!important;font-weight:800;border-color:${brandDk}!important;}
+footer{text-align:center;padding:20px;font-size:11px;color:#888;margin-top:8px;}
+@media print{body{background:#fff;}.sec{box-shadow:none;border:1px solid #eee;page-break-inside:avoid;}}`;
+
+  let body='';
+
+  if(D.s1){const s=D.s1;
+    body+=`<div class="sec"><h2>1. New User Registration (ACTIVE)</h2>
+    <div class="krow"><div class="kpi"><div class="kv">${f(s.total_active)}</div><div class="kl">สมาชิก ACTIVE รวม</div></div>
+    <div class="kpi"><div class="kv">${f(Math.max(...s.active))}</div><div class="kl">เดือนสูงสุด</div></div>
+    <div class="kpi"><div class="kv">${f(Math.round(s.total_active/s.months.length))}</div><div class="kl">เฉลี่ยต่อเดือน</div></div></div>
+    <div class="tw"><table><tr><th class="l">เดือน</th><th>สมาชิกใหม่ (ACTIVE)</th><th>%Ch</th></tr>
+    ${s.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td><td>${f(s.active[i])}</td><td style="${pctSty(s.pch[i])}">${pctTxt(s.pch[i])}</td></tr>`).join('')}
+    <tr class="tot"><td class="l">รวม</td><td>${f(s.total_active)}</td><td>–</td></tr></table></div></div>`;}
+
+  if(D.s3){const s=D.s3;const uk=CH_KEYS.filter(k=>s.data[k]&&s.totals[k]>0);
+    body+=`<div class="sec"><h2>2. Sales Report (THB)</h2>
+    <div class="krow"><div class="kpi"><div class="kv">฿${f(s.grand)}</div><div class="kl">ยอดขายรวม</div></div>
+    ${uk.map(k=>`<div class="kpi"><div class="kv">฿${f(s.totals[k])}</div><div class="kl">${k}</div></div>`).join('')}</div>
+    <div class="tw"><table><tr><th class="l">เดือน</th>${uk.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม (THB)</th><th>%Ch</th></tr>
+    ${s.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${uk.map(k=>`<td>${f(s.data[k][i])}</td>`).join('')}<td><b>${f(s.total[i])}</b></td><td style="${pctSty(s.pch[i])}">${pctTxt(s.pch[i])}</td></tr>`).join('')}
+    <tr class="tot"><td class="l">รวม</td>${uk.map(k=>`<td>${f(s.totals[k])}</td>`).join('')}<td>${f(s.grand)}</td><td>–</td></tr></table></div></div>`;}
+
+  if(D.s4a){const a=D.s4a,b=D.s4b;const ak=CH_KEYS.filter(k=>a.data[k]&&a.totals[k]>0);const bk=(b.sckeys||SC_KEYS).filter(k=>b.data[k]&&b.totals[k]>0);const wp=b.totals['Welcome Point']||0;
+    body+=`<div class="sec"><h2>3. Points Report</h2>
+    <div class="krow"><div class="kpi"><div class="kv">${f(a.grand)}</div><div class="kl">คะแนน 3.1 (ช่องทาง)</div></div><div class="kpi"><div class="kv">${f(b.grand)}</div><div class="kl">คะแนน 3.2 (ทุกแหล่ง)</div></div><div class="kpi"><div class="kv">${f(wp)}</div><div class="kl">Welcome Point</div></div></div>
+    <h3>3.1 · คะแนนตามช่องทาง</h3>
+    <div class="tw"><table><tr><th class="l">เดือน</th>${ak.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม</th><th>%Ch</th></tr>
+    ${a.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${ak.map(k=>`<td>${f(a.data[k][i])}</td>`).join('')}<td><b>${f(a.total[i])}</b></td><td style="${pctSty(a.pch[i])}">${pctTxt(a.pch[i])}</td></tr>`).join('')}
+    <tr class="tot"><td class="l">รวม</td>${ak.map(k=>`<td>${f(a.totals[k])}</td>`).join('')}<td>${f(a.grand)}</td><td>–</td></tr></table></div>
+    <h3>3.2 · คะแนนแยกตามแหล่งที่มาทั้งหมด</h3>
+    <div class="tw"><table><tr><th class="l">เดือน</th>${bk.map(k=>`<th style="background:${CHART_COLORS[k]||brand};border-color:${CHART_COLORS[k]||brand}">${k}</th>`).join('')}<th>รวม</th><th>%Ch</th></tr>
+    ${b.months.map((m,i)=>`<tr><td class="l">${ML[m]||m}</td>${bk.map(k=>`<td>${f(b.data[k][i])}</td>`).join('')}<td><b>${f(b.total[i])}</b></td><td style="${pctSty(b.pch[i])}">${pctTxt(b.pch[i])}</td></tr>`).join('')}
+    <tr class="tot"><td class="l">รวม</td>${bk.map(k=>`<td>${f(b.totals[k])}</td>`).join('')}<td>${f(b.grand)}</td><td>–</td></tr></table></div></div>`;}
+
+  if(D.s5){const s=D.s5;const gm={};if(D.s4b&&D.s4b.months){D.s4b.months.forEach((m,i)=>{gm[m]=D.s4b.total[i];});}
+    const gv=s.months.map(m=>gm[m]||0);const tg=gv.reduce((a,b)=>a+b,0);const tu=s.pts_point.reduce((a,b)=>a+b,0);
+    const pv=buildRewardPivot(s);
+    body+=`<div class="sec"><h2>4. Redemption Report</h2>
+    <div class="krow"><div class="kpi"><div class="kv">${f(s.total_count)}</div><div class="kl">การแลกทั้งหมด</div></div><div class="kpi"><div class="kv">${f(tu)}</div><div class="kl">Used Points</div></div><div class="kpi"><div class="kv">${tg>0?(tu/tg*100).toFixed(1)+'%':'–'}</div><div class="kl">Used/Give Rate</div></div></div>
+    <div class="tw"><table><tr><th class="l">เดือน</th><th style="background:#3A4DA0;border-color:#2a3d90">Give Points</th><th style="background:#7B1E26;border-color:#6b0e16">Used Points</th><th>%Ch</th><th style="background:#1A1A1A;border-color:#000">จำนวนที่แลก</th><th>%Ch</th><th>Used/Give %</th></tr>
+    ${s.months.map((m,i)=>{const g=gv[i]||0,u=s.pts_point[i]||0,pu=i>0?s.pts_point[i-1]:null;return`<tr><td class="l">${ML[m]||m}</td><td>${f(g)}</td><td>${f(u)}</td><td style="${pctSty(pu!==null&&pu!==0?(u-pu)/pu:null)}">${pctTxt(pu!==null&&pu!==0?(u-pu)/pu:null)}</td><td>${f(s.count[i])}</td><td style="${pctSty(s.count_pch[i])}">${pctTxt(s.count_pch[i])}</td><td>${g>0?(u/g*100).toFixed(1)+'%':'–'}</td></tr>`;}).join('')}
+    <tr class="tot"><td class="l">รวม</td><td>${f(tg)}</td><td>${f(tu)}</td><td>–</td><td>${f(s.total_count)}</td><td>–</td><td>${tg>0?(tu/tg*100).toFixed(1)+'%':'–'}</td></tr></table></div>
+    <h3>4.2 · ของรางวัลยอดนิยม ${pv.isQuarterly?'(รายไตรมาส)':'(รายเดือน)'}</h3>
+    <div class="tw"><table><tr><th class="l">ของรางวัล</th>${pv.cols.map((c,i)=>`<th>${pv.colLabels[i]}</th>`).join('')}<th>รวม</th></tr>
+    ${pv.rdList.map(([n,d])=>{const t=Object.values(d).reduce((a,b)=>a+b,0);return`<tr><td class="l">${n}</td>${pv.cols.map(c=>`<td>${d[c]||'–'}</td>`).join('')}<td><b>${t}</b></td></tr>`;}).join('')}
+    <tr class="tot"><td class="l">รวม</td>${pv.cols.map(c=>`<td>${pv.countByCol[c]||0}</td>`).join('')}<td>${s.total_count}</td></tr></table></div></div>`;}
+
+  const html=`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${storeName} — Dashboard Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>${css}</style></head><body>
+<header><div class="wrap"><h1>${storeName}</h1>${tagline?`<div class="sub">${tagline}</div>`:''}<div class="meta">📊 Export วันที่ ${exportDate} · Loyalty Dashboard Pro</div></div></header>
+<div class="wrap">${body}<footer>© ${new Date().getFullYear()} Rocket Innovation Dashboard · จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</footer></div></body></html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=storeName.replace(/[^\w฀-๿]/g,'_')+'_report_'+new Date().toISOString().split('T')[0]+'.html';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
 }
 
 // Init render panel 0 (settings) immediately
