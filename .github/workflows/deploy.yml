@@ -30,8 +30,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p _site
-          cp intermal.html _site/index.html
-          cp intermal.html _site/intermal.html
+          cp index.html _site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
