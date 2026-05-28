@@ -1744,7 +1744,8 @@ function saveApiUrl(){
 }
 
 async function syncFromApi(){
-  const url=document.getElementById('apiUrlInput').value.trim();
+  // Prefer input field value; fall back to saved localStorage URL (for auto-sync on page load)
+  const url=(document.getElementById('apiUrlInput').value||'').trim()||localStorage.getItem('ld_api_url')||'';
   if(!url){addLog('err','❌ กรุณากรอก Google Apps Script URL ก่อน');return;}
   addLog('info','⏳ กำลัง sync จาก: '+url.substring(0,50)+'...');
   try{
