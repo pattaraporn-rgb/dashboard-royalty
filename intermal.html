@@ -984,19 +984,24 @@ function storeRedemptions(rows, fi){
 }
 
 // ── Data Quality Validators ──
+// Sources that legitimately have GIVEN points with zero sale (bonus types, not purchases)
+const QA_BONUS_SOURCES=['welcome point','invite friend','inviter friend','survey','import client','import'];
+
 function validateContacts(rows){
   const issues=[], phones={};
   rows.forEach((r,i)=>{
     const phone=String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
     const name=String(findVal(r,['name','full name','fullname'])||'').trim();
-    const dateStr=findVal(r,['register date','registerdate']);
+    const dateStr=String(findVal(r,['register date','registerdate'])||'').trim();
+    const status=String(findVal(r,['status'])||'').trim();
+    const raw={phone, name, registerDate:dateStr, status};
     if(phone){
       if(phones[phone]){
-        issues.push({level:'err',type:'เบอร์ซ้ำ',row:i+2,msg:`เบอร์ ${phone}${name?' — '+name:''}  (แถว ${i+2}, ซ้ำกับแถว ${phones[phone]})`,detail:phone});
+        issues.push({level:'err',type:'เบอร์ซ้ำ',row:i+2,msg:`เบอร์ ${phone}${name?' — '+name:''}  (แถว ${i+2} ซ้ำกับแถว ${phones[phone]})`,raw});
       } else phones[phone]=i+2;
     }
     if(dateStr&&!parseDate(dateStr)){
-      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dateStr}"  (แถว ${i+2})`,detail:String(dateStr)});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dateStr}"  (แถว ${i+2})`,raw});
     }
   });
   const dupCount=issues.filter(x=>x.type==='เบอร์ซ้ำ').length;
@@ -1010,19 +1015,25 @@ function validatePointReport(rows){
     const dt=String(findVal(r,['date & time','date&time','datetime','date time'])||'').trim();
     const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
     const pts=findVal(r,['points collected','points'])||0;
-    const ptype=String(findVal(r,['point type','pointtype'])||'').trim().toLowerCase();
+    const ptype=String(findVal(r,['point type','pointtype'])||'').trim();
     const sale=parseFloat(findVal(r,['sale amount (thb)','sale amount','saleamount'])||0)||0;
+    const source=String(findVal(r,['source'])||'').trim();
+    const channel=String(findVal(r,['channel'])||'').trim();
+    const raw={date:dt, tel, pointType:ptype, points:pts, saleAmount:sale, source, channel};
+    const ptypeLow=ptype.toLowerCase();
     const key=`${dt}|${tel}|${pts}`;
     if(tel&&dt){
       if(seen[key]){
-        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | pts ${pts}  (แถว ${i+2})`,detail:`${dt}|${tel}|${pts}`});
+        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | pts ${pts}  (แถว ${i+2})`,raw});
       } else seen[key]=i+2;
     }
-    if((ptype==='given'||ptype==='give')&&sale===0){
-      issues.push({level:'warn',type:'GIVEN ยอดขาย 0',row:i+2,msg:`GIVEN points แต่ยอดขาย = 0  (แถว ${i+2}, tel ${tel||'-'})`,detail:`tel:${tel}`});
+    // Only warn GIVEN+zero-sale for purchase-based sources, not bonus points
+    const isBonusSource=QA_BONUS_SOURCES.some(b=>source.toLowerCase().includes(b));
+    if((ptypeLow==='given'||ptypeLow==='give')&&sale===0&&!isBonusSource){
+      issues.push({level:'warn',type:'GIVEN ยอดขาย 0',row:i+2,msg:`GIVEN แต่ยอดขาย = 0  (แถว ${i+2} | source: ${source||'-'} | tel ${tel||'-'})`,raw});
     }
     if(dt&&!parseDate(dt)){
-      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,detail:dt});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,raw});
     }
   });
   const dupCount=issues.filter(x=>x.type==='แถวซ้ำ').length;
@@ -1037,17 +1048,18 @@ function validateRedemptions(rows){
     const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
     const reward=String(findVal(r,['reward name','rewardname'])||'').trim();
     const pts=parseFloat(findVal(r,['points used','pointsused'])||0)||0;
+    const raw={date:dt, tel, rewardName:reward, pointsUsed:pts};
     const key=`${dt}|${tel}|${reward}|${pts}`;
     if(tel&&dt){
       if(seen[key]){
-        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | ${reward}  (แถว ${i+2})`,detail:`${dt}|${tel}|${reward}`});
+        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | ${reward}  (แถว ${i+2})`,raw});
       } else seen[key]=i+2;
     }
     if(pts===0){
-      issues.push({level:'warn',type:'Points Used 0',row:i+2,msg:`Points Used = 0  (แถว ${i+2}, tel ${tel||'-'})`,detail:`tel:${tel}`});
+      issues.push({level:'warn',type:'Points Used 0',row:i+2,msg:`Points Used = 0  (แถว ${i+2} | tel ${tel||'-'} | ${reward||'-'})`,raw});
     }
     if(dt&&!parseDate(dt)){
-      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,detail:dt});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,raw});
     }
   });
   const dupCount=issues.filter(x=>x.type==='แถวซ้ำ').length;
@@ -1073,14 +1085,22 @@ function qaCollapse(slot){qaExpanded[slot]=false;renderQualityReport();}
 
 function exportQaReport(slot){
   const q=qaStore[slot]; if(!q||!q.issues.length) return;
-  const rows=[['ประเภท','ระดับ','แถว','รายละเอียด']];
-  q.issues.forEach(x=>rows.push([x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.detail||x.msg]));
-  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const bom='﻿';
-  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  // Column schema per file type — use actual uploaded values, not synthesized messages
+  const SCHEMAS=[
+    {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','เบอร์โทร','ชื่อ','วันสมัคร','Status'],
+     row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.phone||'', x.raw?.name||'', x.raw?.registerDate||'', x.raw?.status||'']},
+    {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','Date & Time','Member Tel','Point Type','Points Collected','Sale Amount','Source','Channel'],
+     row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.date||'', x.raw?.tel||'', x.raw?.pointType||'', x.raw?.points||'', x.raw?.saleAmount||'', x.raw?.source||'', x.raw?.channel||'']},
+    {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','Date & Time','Member Tel','Reward Name','Points Used'],
+     row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.date||'', x.raw?.tel||'', x.raw?.rewardName||'', x.raw?.pointsUsed||'']},
+  ];
+  const s=SCHEMAS[slot];
+  const csvRows=[s.headers, ...q.issues.map(s.row)];
+  const csv=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`qa_report_${q.label.replace(/\s/g,'_')}.csv`;
+  a.download=`qa_${q.label.replace(/\s/g,'_')}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
 
