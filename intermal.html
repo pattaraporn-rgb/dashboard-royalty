@@ -191,6 +191,28 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 .crud-card .sh{border-bottom-color:var(--ok);}
 .crud-card .snum{background:var(--ok);}
 .crud-log{font-size:11px;background:#f0faf2;border-radius:8px;padding:10px;margin-top:10px;line-height:1.8;max-height:72px;overflow-y:auto;}
+/* DATA QUALITY */
+.qa-section{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid #e0e7ef;margin-bottom:16px;}
+.qa-title{font-size:13px;font-weight:800;color:var(--txt);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.qa-file-card{border-radius:10px;padding:14px;border:1.5px solid #e0e7ef;background:#fafbfc;}
+.qa-file-card.err{border-color:#e74c3c;background:#fff5f5;}
+.qa-file-card.warn{border-color:#f39c12;background:#fffbf0;}
+.qa-file-card.ok{border-color:#1a8f3c;background:#f0faf2;}
+.qa-file-name{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;margin-bottom:6px;}
+.qa-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;}
+.qa-badge.err{background:#fde8e8;color:#c0392b;}
+.qa-badge.warn{background:#fef3cd;color:#856404;}
+.qa-badge.ok{background:#d4edda;color:#155724;}
+.qa-badge.empty{background:#f0f0f0;color:#999;}
+.qa-meta{font-size:10px;color:var(--mut);margin-bottom:6px;}
+.qa-issues{list-style:none;padding:0;margin:0;}
+.qa-issues li{font-size:11px;padding:3px 0;border-bottom:1px dashed #eee;display:flex;gap:6px;align-items:flex-start;line-height:1.4;}
+.qa-issues li:last-child{border-bottom:none;}
+.qa-dot{flex-shrink:0;width:7px;height:7px;border-radius:50%;margin-top:3px;}
+.qa-dot.err{background:#e74c3c;}
+.qa-dot.warn{background:#f39c12;}
+@media(max-width:900px){.qa-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.grid2,.upload-grid{grid-template-columns:1fr;}.kpis,.db-summary{grid-template-columns:repeat(2,1fr);}.settings-grid{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -314,6 +336,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
   <!-- Summary -->
   <div class="db-summary" id="dbSummary"></div>
+
+  <!-- Data Quality Report -->
+  <div id="qaSection" style="display:none"></div>
 
   <!-- Upload Cards -->
   <div class="upload-grid">
@@ -727,6 +752,7 @@ let D = null; // computed dashboard data
 let fileInfo = [{},{},{}]; // file metadata per slot
 let chartInstances = {}; // track chart instances for cleanup
 const rendered = [false,false,false,false,false,false];
+let qaStore = [null,null,null]; // data quality results per slot
 
 // ════════════════════════════════════════════════════════════════
 // INIT
@@ -902,6 +928,10 @@ function processFile(file, slot){
       const fi = {name:file.name, rows:rows.length, uploadDate:new Date().toLocaleString('th-TH'), slot};
       fileInfo[slot] = fi;
 
+      // Validate raw rows before stripping
+      qaStore[slot] = slot===0 ? validateContacts(rows) : slot===1 ? validatePointReport(rows) : validateRedemptions(rows);
+      renderQualityReport();
+
       // Process and store
       if(slot===0) storeContacts(rows, fi);
       else if(slot===1) storePointReport(rows, fi);
@@ -948,6 +978,118 @@ function storeRedemptions(rows, fi){
     return {period: dt?getPeriod(dt):null, rewardName, ptsUsed};
   }).filter(r=>r.period);
   localStorage.setItem('ld_redemp', JSON.stringify({rows:processed, fi}));
+}
+
+// ── Data Quality Validators ──
+function validateContacts(rows){
+  const issues=[], phones={};
+  let dupPhone=0, badDate=0;
+  rows.forEach((r,i)=>{
+    const phone=String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
+    const name=String(findVal(r,['name','full name','fullname'])||'').trim();
+    const dateStr=findVal(r,['register date','registerdate']);
+    if(phone){
+      if(phones[phone]){
+        dupPhone++;
+        if(dupPhone<=5) issues.push({level:'err',msg:`เบอร์ซ้ำ: ${phone}${name?' ('+name+')':''}  แถว ${i+2}`});
+      } else phones[phone]=i+2;
+    }
+    if(dateStr&&!parseDate(dateStr)){
+      badDate++;
+      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dateStr}"  แถว ${i+2}`});
+    }
+  });
+  if(dupPhone>5) issues.push({level:'err',msg:`…และอีก ${dupPhone-5} รายที่เบอร์ซ้ำกัน`});
+  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
+  return {label:'Contacts',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupPhone,issues};
+}
+
+function validatePointReport(rows){
+  const issues=[], seen={};
+  let dupRows=0, zeroSaleGiven=0, badDate=0;
+  rows.forEach((r,i)=>{
+    const dt=String(findVal(r,['date & time','date&time','datetime','date time'])||'').trim();
+    const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
+    const pts=findVal(r,['points collected','points'])||0;
+    const ptype=String(findVal(r,['point type','pointtype'])||'').trim().toLowerCase();
+    const sale=parseFloat(findVal(r,['sale amount (thb)','sale amount','saleamount'])||0)||0;
+    const key=`${dt}|${tel}|${pts}`;
+    if(tel&&dt){
+      if(seen[key]){
+        dupRows++;
+        if(dupRows<=5) issues.push({level:'err',msg:`แถวซ้ำ: ${dt} | tel ${tel} | pts ${pts}`});
+      } else seen[key]=i+2;
+    }
+    if((ptype==='given'||ptype==='give')&&sale===0){
+      zeroSaleGiven++;
+      if(zeroSaleGiven<=3) issues.push({level:'warn',msg:`GIVEN แต่ยอดขาย 0  แถว ${i+2}`});
+    }
+    if(dt&&!parseDate(dt)){
+      badDate++;
+      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dt}"  แถว ${i+2}`});
+    }
+  });
+  if(dupRows>5) issues.push({level:'err',msg:`…และอีก ${dupRows-5} แถวที่ซ้ำกัน`});
+  if(zeroSaleGiven>3) issues.push({level:'warn',msg:`…และอีก ${zeroSaleGiven-3} แถว GIVEN ที่ยอดขาย 0`});
+  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
+  return {label:'Point Report',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupRows,issues};
+}
+
+function validateRedemptions(rows){
+  const issues=[], seen={};
+  let dupRows=0, zeroPts=0, badDate=0;
+  rows.forEach((r,i)=>{
+    const dt=String(findVal(r,['date & time','date&time','datetime','date time'])||'').trim();
+    const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
+    const reward=String(findVal(r,['reward name','rewardname'])||'').trim();
+    const pts=parseFloat(findVal(r,['points used','pointsused'])||0)||0;
+    const key=`${dt}|${tel}|${reward}|${pts}`;
+    if(tel&&dt){
+      if(seen[key]){
+        dupRows++;
+        if(dupRows<=5) issues.push({level:'err',msg:`แถวซ้ำ: ${dt} | tel ${tel} | ${reward}`});
+      } else seen[key]=i+2;
+    }
+    if(pts===0){
+      zeroPts++;
+      if(zeroPts<=3) issues.push({level:'warn',msg:`Points Used = 0  แถว ${i+2}`});
+    }
+    if(dt&&!parseDate(dt)){
+      badDate++;
+      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dt}"  แถว ${i+2}`});
+    }
+  });
+  if(dupRows>5) issues.push({level:'err',msg:`…และอีก ${dupRows-5} แถวที่ซ้ำกัน`});
+  if(zeroPts>3) issues.push({level:'warn',msg:`…และอีก ${zeroPts-3} แถวที่ Points Used เป็น 0`});
+  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
+  return {label:'Redemptions',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupRows,issues};
+}
+
+function renderQualityReport(){
+  const el=document.getElementById('qaSection');
+  if(!qaStore.some(q=>q)){el.style.display='none';return;}
+  const ICONS=['📋','⭐','🎁'], NAMES=['Contacts','Point Report','Redemptions'];
+  const cards=qaStore.map((q,i)=>{
+    if(!q) return `<div class="qa-file-card"><div class="qa-file-name">${ICONS[i]} ${NAMES[i]}</div><span class="qa-badge empty">ยังไม่อัปโหลด</span></div>`;
+    const icon=q.level==='err'?'🔴':q.level==='warn'?'🟡':'🟢';
+    const labelTh=q.level==='err'?'พบปัญหา':q.level==='warn'?'ควรตรวจสอบ':'ผ่านการตรวจ';
+    const dupNote=q.dupCount>0?` &nbsp;·&nbsp; <b style="color:#c0392b">${q.dupCount} แถวซ้ำ</b>`:'';
+    const issHtml=q.issues.length?`<ul class="qa-issues">${q.issues.map(x=>`<li><span class="qa-dot ${x.level}"></span><span>${x.msg}</span></li>`).join('')}</ul>`:'';
+    return `<div class="qa-file-card ${q.level}">
+      <div class="qa-file-name">${ICONS[i]} ${NAMES[i]}</div>
+      <span class="qa-badge ${q.level}">${icon} ${labelTh}</span>
+      <div class="qa-meta">${q.total.toLocaleString()} แถว${dupNote}</div>
+      ${issHtml}
+    </div>`;
+  }).join('');
+  const overallLevel=qaStore.filter(Boolean).reduce((w,q)=>q.level==='err'?'err':w==='err'?'err':q.level==='warn'?'warn':w,'ok');
+  const overallIcon=overallLevel==='err'?'🔴':overallLevel==='warn'?'🟡':'🟢';
+  const overallMsg=overallLevel==='err'?'พบข้อมูลซ้ำหรือผิดพลาด — กรุณาตรวจสอบก่อนนำเสนอ':overallLevel==='warn'?'มีรายการที่ควรตรวจสอบ':'ข้อมูลทั้งหมดผ่านการตรวจสอบ';
+  el.style.display='block';
+  el.innerHTML=`<div class="qa-section"><div class="qa-title">${overallIcon} Data Quality Check &nbsp;—&nbsp; ${overallMsg}</div><div class="qa-grid">${cards}</div></div>`;
 }
 
 // ── Helpers ──
