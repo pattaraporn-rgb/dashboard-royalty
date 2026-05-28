@@ -348,7 +348,6 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-ok" onclick="recomputeAndRender()">🔄 คำนวณใหม่</button>
       <button class="btn btn-primary" onclick="exportAsHTML()" style="background:#1a8f3c;border-color:#1a8f3c;">📄 Export HTML</button>
-      <button class="btn btn-primary" id="exportExcelBtn" onclick="exportAllDataExcel()" style="background:#217346;border-color:#217346;">📊 Export Excel</button>
       <button class="btn btn-danger" onclick="showClearModal()">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
   </div>
@@ -649,7 +648,6 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
       <select class="form-input" id="ci_gender"><option value="">ไม่ระบุ</option><option value="M">M (ชาย)</option><option value="F">F (หญิง)</option></select></div>
     <div class="form-group"><div class="form-label">Tier</div><input type="text" class="form-input" id="ci_tier" placeholder="Bronze / Silver / Gold"></div>
     <div class="form-group"><div class="form-label">Points balance</div><input type="number" class="form-input" id="ci_pts" value="0"></div>
-    <div class="form-group"><div class="form-label">Line User ID</div><input type="text" class="form-input" id="ci_lineuid" placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAddModal('contact')">ยกเลิก</button>
       <button class="btn btn-primary" id="submitContactBtn" onclick="submitAdd('contact')">💾 บันทึกลง Sheets</button>
@@ -969,8 +967,7 @@ function computeInactiveData(rows){
     const lastAct=lastActStr?parseDate(lastActStr):null;
     const lastActIso=lastAct?lastAct.toISOString().slice(0,10):'';
     const regDate=String(findVal(r,['register date','registerdate'])||'').trim();
-    const lineUserId=String(findVal(r,['line user id'])||'').trim();
-    const entry={name,phone,regDate,lastActivityDate:lastActIso,lineUserId};
+    const entry={name,phone,regDate,lastActivityDate:lastActIso};
     if(!lastActStr||!lastActIso) blank.push(entry);
     else if(lastActIso<cutoffStr) overdue.push(entry);
   });
@@ -1556,8 +1553,8 @@ function exportInactiveMembers(type){
   const ia=inactiveData; if(!ia){alert('⚠️ ไม่พบข้อมูล กรุณาอัปโหลดไฟล์ Contacts ใหม่อีกครั้ง');return;}
   const members=type==='blank'?ia.blank:ia.overdue;
   if(!members.length) return;
-  const headers=['ชื่อ','เบอร์โทร','วันสมัคร','Last Activity Date','Status','Line User ID'];
-  const csvRows=[headers,...members.map(m=>[m.name||'',m.phone||'',m.regDate||'',m.lastActivityDate||'',m.status||'',m.lineUserId||''])];
+  const headers=['ชื่อ','เบอร์โทร','วันสมัคร','Last Activity Date','Status'];
+  const csvRows=[headers,...members.map(m=>[m.name||'',m.phone||'',m.regDate||'',m.lastActivityDate||'',m.status||''])];
   const csv=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
@@ -1696,9 +1693,9 @@ function renderP5(){
 function downloadTemplate(slot){
   const templates=[
     {name:'template_contacts.xlsx',rows:[
-      ['Name','Status','Register Date','Phone No','Gender','Tier','Points balance','Line User ID'],
-      ['ตัวอย่าง สมาชิก','ACTIVE','2025-04-15 09:00:00','0812345678','FEMALE','Bronze','0','Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
-      ['อีกตัวอย่าง','ACTIVE','2025-05-01 10:00:00','0898765432','MALE','Silver','500',''],
+      ['Name','Status','Register Date','Phone No','Gender','Tier','Points balance'],
+      ['ตัวอย่าง สมาชิก','ACTIVE','2025-04-15 09:00:00','0812345678','FEMALE','Bronze','0'],
+      ['อีกตัวอย่าง','ACTIVE','2025-05-01 10:00:00','0898765432','MALE','Silver','500'],
     ]},
     {name:'template_point_report.xlsx',rows:[
       ['Date & time','Member name','Member tel','Point type','Points collected','Sale amount (THB)','Source','Channel','Sub channel'],
@@ -1768,7 +1765,6 @@ async function syncFromApi(){
     const ts=new Date().toLocaleString('th-TH');
     if(contacts.length){
       storeContacts(contacts,{name:'Supabase Sync',rows:contacts.length,uploadDate:ts});
-      inactiveData = computeInactiveData(contacts);
       fileInfo[0]={name:'Supabase Sync',rows:contacts.length,uploadDate:ts};
       addLog('ok',`✓ Contacts: ${contacts.length.toLocaleString()} แถว`);
     }
@@ -1845,7 +1841,6 @@ function openAddModal(type){
     document.getElementById('ci_phone').value='';
     document.getElementById('ci_tier').value='';
     document.getElementById('ci_pts').value='0';
-    document.getElementById('ci_lineuid').value='';
     document.getElementById('addContactModal').classList.add('show');
   }else if(type==='point'){
     document.getElementById('pi_dt').value=dtLocal;
@@ -1884,8 +1879,7 @@ async function submitAdd(type){
       'Phone No':document.getElementById('ci_phone').value,
       'Gender':document.getElementById('ci_gender').value,
       'Tier':document.getElementById('ci_tier').value,
-      'Points balance':Number(document.getElementById('ci_pts').value)||0,
-      'Line User ID':document.getElementById('ci_lineuid').value
+      'Points balance':Number(document.getElementById('ci_pts').value)||0
     };
   }else if(type==='point'){
     sheet='Point Report'; btnId='submitPointBtn';
@@ -2055,7 +2049,7 @@ function jsonOut(data) {
 
 // ── Backup raw rows to Google Sheet after every Excel upload ──
 const SUPA_COLS={
-  contacts:['Name','Status','Register Date','Phone No','Gender','Tier','Points balance','Line User ID'],
+  contacts:['Name','Status','Register Date','Phone No','Gender','Tier','Points balance'],
   point_report:['Date & time','Member name','Member tel','Point type','Points collected','Sale amount (THB)','Source','Channel','Sub channel'],
   redemptions:['Date & time','Reward name','Reward code','Points used','Member name','Member tel']
 };
@@ -2065,7 +2059,7 @@ async function backupToSheet(slot, rows){
   const table=TABLE_NAMES[slot];
   const cols=SUPA_COLS[table];
   // Keep only columns defined in Supabase schema (strips empty-header cols + unknown cols)
-  const clean=rows.map(r=>{const o={};cols.forEach(c=>{const v=findVal(r,[c]);if(v!==undefined&&v!==null&&v!=='')o[c]=v;});return o;});
+  const clean=rows.map(r=>{const o={};cols.forEach(c=>{if(r[c]!==undefined&&r[c]!==null)o[c]=r[c];});return o;});
   addLog('info',`⏳ Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
   try{
     await fetch(`${SUPA.url}/${table}?id=gte.0`,{method:'DELETE',headers:SUPA.h});
@@ -2098,39 +2092,6 @@ async function clearSheets(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════
-// EXPORT AS EXCEL — Raw data from Supabase (all 3 tables)
-// ════════════════════════════════════════════════════════════════
-async function exportAllDataExcel(){
-  const btn=document.getElementById('exportExcelBtn');
-  btn.disabled=true; btn.textContent='⏳ กำลังดึงข้อมูล...';
-  try{
-    const [contacts,pointReport,redemptions]=await Promise.all([
-      supaFetchAll('contacts'),
-      supaFetchAll('point_report'),
-      supaFetchAll('redemptions')
-    ]);
-    const wb=XLSX.utils.book_new();
-    const addSheet=(rows,cols,sheetName)=>{
-      if(!rows.length) return;
-      const data=[cols,...rows.map(r=>cols.map(c=>r[c]!==undefined&&r[c]!==null?r[c]:''))];
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),sheetName);
-    };
-    addSheet(contacts,   SUPA_COLS.contacts,      'Contacts');
-    addSheet(pointReport,SUPA_COLS.point_report,  'Point Report');
-    addSheet(redemptions,SUPA_COLS.redemptions,   'Redemptions');
-    if(!wb.SheetNames.length){alert('ไม่มีข้อมูลใน Supabase — กด Sync หรืออัปโหลด Excel ก่อน');return;}
-    const fname='loyalty_data_'+new Date().toISOString().slice(0,10)+'.xlsx';
-    XLSX.writeFile(wb,fname);
-    addLog('ok',`✅ Export Excel สำเร็จ: contacts ${contacts.length} แถว, point_report ${pointReport.length} แถว, redemptions ${redemptions.length} แถว`);
-  }catch(err){
-    alert('Export ไม่สำเร็จ: '+err.message);
-    addLog('err','❌ Export Excel ไม่สำเร็จ: '+err.message);
-  }finally{
-    btn.disabled=false; btn.textContent='📊 Export Excel';
-  }
-}
-
 // EXPORT AS HTML — Full Dashboard Snapshot
 // ════════════════════════════════════════════════════════════════
 function exportAsHTML(){
@@ -2289,12 +2250,12 @@ function exportAsHTML(){
   <button onclick="switchTab(4)"><span class="tnum">3</span> Points Report</button>
   <button onclick="switchTab(5)"><span class="tnum">4</span> Redemption</button>
 </div>
+<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
 <div class="content">${panelsHtml}</div>
 <footer>
 <b>วิธีคำนวณ:</b> %Ch = (เดือนนี้ − เดือนก่อนหน้า) ÷ เดือนก่อนหน้า &nbsp;|&nbsp; New User: Status=ACTIVE &nbsp;|&nbsp; Sales/Points: Point type=GIVEN<br>
 <div style="margin-top:10px;padding-top:10px;border-top:1px solid #222;color:#888;">© ${yr} Rocket Innovation Dashboard &nbsp;·&nbsp; จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</div>
 </footer>
-<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
 <script>${embJS}<\/script>
 </body></html>`;
 
