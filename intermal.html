@@ -1019,7 +1019,8 @@ function validatePointReport(rows){
     const sale=parseFloat(findVal(r,['sale amount (thb)','sale amount','saleamount'])||0)||0;
     const source=String(findVal(r,['source'])||'').trim();
     const channel=String(findVal(r,['channel'])||'').trim();
-    const raw={date:dt, tel, pointType:ptype, points:pts, saleAmount:sale, source, channel};
+    const note=String(findVal(r,['note','หมายเหตุ','remark','remarks','memo','description'])||'').trim();
+    const raw={date:dt, tel, pointType:ptype, points:pts, saleAmount:sale, source, channel, note};
     const ptypeLow=ptype.toLowerCase();
     const key=`${dt}|${tel}|${pts}`;
     if(tel&&dt){
@@ -1030,7 +1031,8 @@ function validatePointReport(rows){
     // Only warn GIVEN+zero-sale for purchase-based sources, not bonus points
     const isBonusSource=QA_BONUS_SOURCES.some(b=>source.toLowerCase().includes(b));
     if((ptypeLow==='given'||ptypeLow==='give')&&sale===0&&!isBonusSource){
-      issues.push({level:'warn',type:'GIVEN ยอดขาย 0',row:i+2,msg:`GIVEN แต่ยอดขาย = 0  (แถว ${i+2} | source: ${source||'-'} | tel ${tel||'-'})`,raw});
+      const noteHint=note?` | Note: "${note}"`:'';
+      issues.push({level:'warn',type:'GIVEN ยอดขาย 0',row:i+2,msg:`GIVEN แต่ยอดขาย = 0  (แถว ${i+2} | source: ${source||'-'}${noteHint})`,raw});
     }
     if(dt&&!parseDate(dt)){
       issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,raw});
@@ -1089,8 +1091,8 @@ function exportQaReport(slot){
   const SCHEMAS=[
     {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','เบอร์โทร','ชื่อ','วันสมัคร','Status'],
      row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.phone||'', x.raw?.name||'', x.raw?.registerDate||'', x.raw?.status||'']},
-    {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','Date & Time','Member Tel','Point Type','Points Collected','Sale Amount','Source','Channel'],
-     row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.date||'', x.raw?.tel||'', x.raw?.pointType||'', x.raw?.points||'', x.raw?.saleAmount||'', x.raw?.source||'', x.raw?.channel||'']},
+    {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','Date & Time','Member Tel','Point Type','Points Collected','Sale Amount','Source','Channel','Note'],
+     row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.date||'', x.raw?.tel||'', x.raw?.pointType||'', x.raw?.points||'', x.raw?.saleAmount||'', x.raw?.source||'', x.raw?.channel||'', x.raw?.note||'']},
     {headers:['ประเภทปัญหา','ระดับ','แถว (ไฟล์)','Date & Time','Member Tel','Reward Name','Points Used'],
      row:x=>[x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.raw?.date||'', x.raw?.tel||'', x.raw?.rewardName||'', x.raw?.pointsUsed||'']},
   ];
