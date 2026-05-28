@@ -1918,8 +1918,9 @@ async function submitAdd(type){
 function showClearModal(){document.getElementById('clearModal').classList.add('show');}
 function hideClearModal(){document.getElementById('clearModal').classList.remove('show');}
 function clearAllData(){
+  if(localStorage.getItem('ld_api_url')) clearSheets();
   ['ld_contacts','ld_point','ld_redemp','ld_computed'].forEach(k=>localStorage.removeItem(k));
-  fileInfo=[{},{},{}];D=null;
+  fileInfo=[{},{},{}];D=null;inactiveData=null;qaStore=[null,null,null];
   updateKpis();updateDbSummary();updateFileCards();
   document.getElementById('dateRangeLabel').textContent='ยังไม่มีข้อมูล — กรุณาอัปโหลดไฟล์ในปุ่มฐานข้อมูล';
   destroyCharts(['c1','c3','c4a','c4b','c5a','c5b']);
@@ -2051,21 +2052,28 @@ async function backupToSheet(slot, rows){
   const sheet=SHEET_NAMES[slot];
   addLog('info',`⏳ Backup ${rows.length.toLocaleString()} แถว → Sheet "${sheet}"...`);
   try{
-    const res=await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
+    // mode:no-cors bypasses CORS preflight — Apps Script receives POST, response is opaque
+    await fetch(url,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action:'batch_replace',sheet,rows})
     });
-    try{
-      const json=await res.json();
-      if(json.success) addLog('ok',`✅ Backup สำเร็จ — "${sheet}" (${json.inserted.toLocaleString()} แถว)`);
-      else addLog('err',`❌ Backup ล้มเหลว: ${json.error}`);
-    }catch{
-      addLog('ok',`✅ ส่งข้อมูลไปยัง Sheet แล้ว (${rows.length.toLocaleString()} แถว) — ตรวจสอบใน Sheet โดยตรง`);
-    }
+    addLog('ok',`✅ ส่งข้อมูล backup แล้ว (${rows.length.toLocaleString()} แถว) — ตรวจสอบใน Sheet ได้เลย`);
   }catch(err){
     addLog('warn',`⚠️ Backup ไม่สำเร็จ: ${err.message}`);
   }
+}
+
+async function clearSheets(){
+  const url=localStorage.getItem('ld_api_url')||'';
+  if(!url) return;
+  addLog('info','⏳ กำลังล้างข้อมูลใน Google Sheet...');
+  for(const sheet of ['contacts','Point Report','Redemptions']){
+    await fetch(url,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'batch_replace',sheet,rows:[]})
+    });
+  }
+  addLog('ok','✅ ล้างข้อมูลใน Sheet ทั้งหมดแล้ว');
 }
 
 // ════════════════════════════════════════════════════════════════
