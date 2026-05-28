@@ -988,7 +988,7 @@ function storeRedemptions(rows, fi){
 const QA_BONUS_SOURCES=['welcome point','invite friend','inviter friend','survey','import client','import'];
 
 function validateContacts(rows){
-  const issues=[], phones={};
+  const issues=[], activePhones={};
   rows.forEach((r,i)=>{
     const phone=String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
     const name=String(findVal(r,['name','full name','fullname'])||'').trim();
@@ -996,15 +996,20 @@ function validateContacts(rows){
     const status=String(findVal(r,['status'])||'').trim();
     const raw={phone, name, registerDate:dateStr, status};
     if(phone){
-      if(phones[phone]){
-        issues.push({level:'err',type:'เบอร์ซ้ำ',row:i+2,msg:`เบอร์ ${phone}${name?' — '+name:''}  (แถว ${i+2} ซ้ำกับแถว ${phones[phone]})`,raw});
-      } else phones[phone]=i+2;
+      const isActive=status.toUpperCase()==='ACTIVE';
+      if(isActive){
+        if(activePhones[phone]){
+          // Same phone with 2 ACTIVE accounts = real system bug (points double-counted)
+          issues.push({level:'err',type:'เบอร์ซ้ำ (ACTIVE)',row:i+2,msg:`เบอร์ ${phone}${name?' — '+name:''} มี 2 account ACTIVE  (แถว ${i+2} ซ้ำกับแถว ${activePhones[phone]})`,raw});
+        } else activePhones[phone]=i+2;
+      }
+      // INACTIVE duplicates are expected (incomplete registrations) — not flagged
     }
     if(dateStr&&!parseDate(dateStr)){
       issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dateStr}"  (แถว ${i+2})`,raw});
     }
   });
-  const dupCount=issues.filter(x=>x.type==='เบอร์ซ้ำ').length;
+  const dupCount=issues.filter(x=>x.type==='เบอร์ซ้ำ (ACTIVE)').length;
   const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
   return {label:'Contacts',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount,issues};
 }
