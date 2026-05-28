@@ -215,6 +215,21 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 .qa-toggle{font-size:10px;color:var(--brand);cursor:pointer;border:none;background:none;padding:2px 0;margin-top:2px;text-decoration:underline;display:block;}
 .qa-export-btn{margin-top:10px;font-size:10px;background:none;border:1px solid #ccc;border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--mut);width:100%;}
 .qa-export-btn:hover{background:#f0f0f0;}
+/* INACTIVE MEMBERS SECTION */
+.inactive-section{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid #e0e7ef;}
+.inactive-title{font-size:13px;font-weight:800;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.inactive-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.inactive-card{border-radius:10px;padding:16px;border:1.5px solid #e0e7ef;background:#fafbfc;}
+.inactive-card.blank{border-color:#95a5a6;background:#f8f9fa;}
+.inactive-card.overdue{border-color:#e67e22;background:#fff8f0;}
+.inactive-label{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;margin-bottom:6px;}
+.inactive-count{font-size:28px;font-weight:800;margin-bottom:4px;}
+.inactive-card.blank .inactive-count{color:#7f8c8d;}
+.inactive-card.overdue .inactive-count{color:#e67e22;}
+.inactive-sub{font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.5;}
+.inactive-export{font-size:10px;background:none;border:1px solid #ccc;border-radius:6px;padding:5px 12px;cursor:pointer;color:var(--mut);width:100%;}
+.inactive-export:hover{background:#f0f0f0;}
+@media(max-width:700px){.inactive-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.qa-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.grid2,.upload-grid{grid-template-columns:1fr;}.kpis,.db-summary{grid-template-columns:repeat(2,1fr);}.settings-grid{grid-template-columns:1fr;}}
 </style>
@@ -563,6 +578,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div class="chartbox"><canvas id="c1"></canvas></div>
     <div class="tbl-wrap"><div id="t1"></div></div>
     <div class="note" id="n1"></div>
+    <div id="inactiveSection" style="display:none;margin-top:20px"></div>
   </div>
 </div>
 </div>
@@ -955,7 +971,16 @@ function storeContacts(rows, fi){
   const processed = rows.map(r=>{
     const status = findVal(r,['status']);
     const regDate = parseDate(findVal(r,['register date','registerdate']));
-    return {status, regDate: regDate ? getPeriod(regDate) : null};
+    const name = String(findVal(r,['name','full name','fullname'])||'').trim();
+    const phone = String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
+    const lastActStr = String(findVal(r,['last activity date','lastactivitydate','last activity','lastactivity','last login','lastlogin'])||'').trim();
+    const lastAct = lastActStr ? parseDate(lastActStr) : null;
+    return {
+      status,
+      regDate: regDate ? getPeriod(regDate) : null,
+      name, phone,
+      lastActivityDate: lastAct ? lastAct.toISOString().slice(0,10) : (lastActStr||'')
+    };
   }).filter(r=>r.regDate);
   localStorage.setItem('ld_contacts', JSON.stringify({rows:processed, fi}));
 }
@@ -1199,6 +1224,14 @@ function recomputeAndRender(){
     const active = months.map(m=>byM[m]);
     const pch = active.map((v,i)=>i===0?null:(active[i-1]?((v-active[i-1])/active[i-1]):null));
     D.s1 = {months, active, pch, total_active: active.reduce((a,b)=>a+b,0)};
+
+    // Inactive analysis — among ALL ACTIVE members (any regDate)
+    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth()-3);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+    const allActive = rows.filter(r=>String(r.status).trim().toUpperCase()==='ACTIVE');
+    const blankAct  = allActive.filter(r=>!r.lastActivityDate||r.lastActivityDate==='');
+    const overdueAct= allActive.filter(r=>r.lastActivityDate&&r.lastActivityDate!==''&&r.lastActivityDate<cutoffStr);
+    D.s1.inactive={cutoffStr, blank:blankAct, overdue:overdueAct, totalActive:allActive.length};
   }
 
   // -- s3, s4a, s4b partial, s5 partial --
@@ -1481,6 +1514,46 @@ function renderP2(){
   r+=`<tr class="tot"><td>รวม</td><td>${fmt(s.total_active)}</td><td>–</td></tr></table>`;
   document.getElementById('t1').innerHTML=r;
   document.getElementById('n1').innerHTML=`สมาชิก ACTIVE <b>${fmt(s.total_active)} คน</b> — ไม่รวมเดือนปัจจุบันที่ข้อมูลยังไม่ครบ`;
+
+  // Inactive members section
+  const el=document.getElementById('inactiveSection');
+  const ia=s.inactive;
+  if(!ia){el.style.display='none';return;}
+  const hasLastAct = ia.totalActive>0 && (ia.blank.length+ia.overdue.length)>0 || ia.blank.length===ia.totalActive;
+  // Show section even if zero results — to confirm column was found
+  const cutoffLabel = ia.cutoffStr ? ia.cutoffStr.slice(0,7).replace('-','/') : '';
+  el.style.display='block';
+  el.innerHTML=`<div class="inactive-section">
+    <div class="inactive-title">😴 สมาชิก ACTIVE ที่ไม่ได้ใช้งาน &nbsp;—&nbsp; จาก ${fmt(ia.totalActive)} คน ACTIVE ทั้งหมด</div>
+    <div class="inactive-grid">
+      <div class="inactive-card blank">
+        <div class="inactive-label">🔲 ไม่มีข้อมูล Last Activity</div>
+        <div class="inactive-count">${fmt(ia.blank.length)}</div>
+        <div class="inactive-sub">คน — ไม่เคยมีประวัติการเข้าระบบ<br>หรือไฟล์ไม่มีคอลัมน์ Last Activity Date</div>
+        ${ia.blank.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('blank')">📥 Export รายชื่อ (${ia.blank.length} คน) .csv</button>`:''}
+      </div>
+      <div class="inactive-card overdue">
+        <div class="inactive-label">⏰ ไม่ได้เข้าระบบ &gt;3 เดือน (ก่อน ${cutoffLabel})</div>
+        <div class="inactive-count">${fmt(ia.overdue.length)}</div>
+        <div class="inactive-sub">คน — Last Activity Date น้อยกว่า ${cutoffLabel}<br>อาจเป็นลูกค้าที่หลุดออกจากระบบ</div>
+        ${ia.overdue.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('overdue')">📥 Export รายชื่อ (${ia.overdue.length} คน) .csv</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function exportInactiveMembers(type){
+  const ia=D?.s1?.inactive; if(!ia) return;
+  const members=type==='blank'?ia.blank:ia.overdue;
+  if(!members.length) return;
+  const headers=['ชื่อ','เบอร์โทร','วันสมัคร','Last Activity Date','Status'];
+  const csvRows=[headers,...members.map(m=>[m.name||'',m.phone||'',m.regDate||'',m.lastActivityDate||'',m.status||''])];
+  const csv=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`inactive_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 }
 
 function renderP3(){
