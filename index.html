@@ -1225,7 +1225,7 @@ function recomputeAndRender(){
     const months = Object.keys(byM).sort();
     const active = months.map(m=>byM[m]);
     const pch = active.map((v,i)=>i===0?null:(active[i-1]?((v-active[i-1])/active[i-1]):null));
-    D.s1 = {months, active, pch, total_active: allActive.length};
+    D.s1 = {months, active, pch, total_active: activeRows.length};
     // Attach in-memory inactive data (null if page was refreshed without re-uploading)
     D.s1.inactive = inactiveData;
   }
