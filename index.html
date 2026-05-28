@@ -348,6 +348,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-ok" onclick="recomputeAndRender()">🔄 คำนวณใหม่</button>
       <button class="btn btn-primary" onclick="exportAsHTML()" style="background:#1a8f3c;border-color:#1a8f3c;">📄 Export HTML</button>
+      <button class="btn btn-primary" id="exportExcelBtn" onclick="exportAllDataExcel()" style="background:#217346;border-color:#217346;">📊 Export Excel</button>
       <button class="btn btn-danger" onclick="showClearModal()">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
   </div>
@@ -2097,6 +2098,39 @@ async function clearSheets(){
 }
 
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// EXPORT AS EXCEL — Raw data from Supabase (all 3 tables)
+// ════════════════════════════════════════════════════════════════
+async function exportAllDataExcel(){
+  const btn=document.getElementById('exportExcelBtn');
+  btn.disabled=true; btn.textContent='⏳ กำลังดึงข้อมูล...';
+  try{
+    const [contacts,pointReport,redemptions]=await Promise.all([
+      supaFetchAll('contacts'),
+      supaFetchAll('point_report'),
+      supaFetchAll('redemptions')
+    ]);
+    const wb=XLSX.utils.book_new();
+    const addSheet=(rows,cols,sheetName)=>{
+      if(!rows.length) return;
+      const data=[cols,...rows.map(r=>cols.map(c=>r[c]!==undefined&&r[c]!==null?r[c]:''))];
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),sheetName);
+    };
+    addSheet(contacts,   SUPA_COLS.contacts,      'Contacts');
+    addSheet(pointReport,SUPA_COLS.point_report,  'Point Report');
+    addSheet(redemptions,SUPA_COLS.redemptions,   'Redemptions');
+    if(!wb.SheetNames.length){alert('ไม่มีข้อมูลใน Supabase — กด Sync หรืออัปโหลด Excel ก่อน');return;}
+    const fname='loyalty_data_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    XLSX.writeFile(wb,fname);
+    addLog('ok',`✅ Export Excel สำเร็จ: contacts ${contacts.length} แถว, point_report ${pointReport.length} แถว, redemptions ${redemptions.length} แถว`);
+  }catch(err){
+    alert('Export ไม่สำเร็จ: '+err.message);
+    addLog('err','❌ Export Excel ไม่สำเร็จ: '+err.message);
+  }finally{
+    btn.disabled=false; btn.textContent='📊 Export Excel';
+  }
+}
+
 // EXPORT AS HTML — Full Dashboard Snapshot
 // ════════════════════════════════════════════════════════════════
 function exportAsHTML(){
@@ -2255,12 +2289,12 @@ function exportAsHTML(){
   <button onclick="switchTab(4)"><span class="tnum">3</span> Points Report</button>
   <button onclick="switchTab(5)"><span class="tnum">4</span> Redemption</button>
 </div>
-<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
 <div class="content">${panelsHtml}</div>
 <footer>
 <b>วิธีคำนวณ:</b> %Ch = (เดือนนี้ − เดือนก่อนหน้า) ÷ เดือนก่อนหน้า &nbsp;|&nbsp; New User: Status=ACTIVE &nbsp;|&nbsp; Sales/Points: Point type=GIVEN<br>
 <div style="margin-top:10px;padding-top:10px;border-top:1px solid #222;color:#888;">© ${yr} Rocket Innovation Dashboard &nbsp;·&nbsp; จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</div>
 </footer>
+<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
 <script>${embJS}<\/script>
 </body></html>`;
 
