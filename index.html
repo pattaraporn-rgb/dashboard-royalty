@@ -2064,7 +2064,7 @@ async function backupToSheet(slot, rows){
   const table=TABLE_NAMES[slot];
   const cols=SUPA_COLS[table];
   // Keep only columns defined in Supabase schema (strips empty-header cols + unknown cols)
-  const clean=rows.map(r=>{const o={};cols.forEach(c=>{if(r[c]!==undefined&&r[c]!==null)o[c]=r[c];});return o;});
+  const clean=rows.map(r=>{const o={};cols.forEach(c=>{const v=findVal(r,[c]);if(v!==undefined&&v!==null&&v!=='')o[c]=v;});return o;});
   addLog('info',`⏳ Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
   try{
     await fetch(`${SUPA.url}/${table}?id=gte.0`,{method:'DELETE',headers:SUPA.h});
