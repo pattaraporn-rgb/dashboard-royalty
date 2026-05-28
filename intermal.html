@@ -772,6 +772,7 @@ let fileInfo = [{},{},{}]; // file metadata per slot
 let chartInstances = {}; // track chart instances for cleanup
 const rendered = [false,false,false,false,false,false];
 let qaStore = [null,null,null]; // data quality results per slot
+let inactiveData = null; // in-memory only — computed from raw contacts on upload, not persisted
 
 // ════════════════════════════════════════════════════════════════
 // INIT
@@ -951,6 +952,9 @@ function processFile(file, slot){
       qaStore[slot] = slot===0 ? validateContacts(rows) : slot===1 ? validatePointReport(rows) : validateRedemptions(rows);
       renderQualityReport();
 
+      // Compute inactive analysis from raw contacts (in-memory only, avoids localStorage quota)
+      if(slot===0) inactiveData = computeInactiveData(rows);
+
       // Process and store
       if(slot===0) storeContacts(rows, fi);
       else if(slot===1) storePointReport(rows, fi);
@@ -966,21 +970,36 @@ function processFile(file, slot){
   reader.readAsArrayBuffer(file);
 }
 
+// ── Inactive member analysis (in-memory, not persisted) ──
+function computeInactiveData(rows){
+  const cutoff=new Date(); cutoff.setMonth(cutoff.getMonth()-3);
+  const cutoffStr=cutoff.toISOString().slice(0,10);
+  const LAD_KEYS=['last activity date','lastactivitydate','last activity','lastactivity','last login','lastlogin'];
+  const hasColumn=rows.some(r=>String(findVal(r,LAD_KEYS)||'').trim()!=='');
+  const activeRows=rows.filter(r=>String(findVal(r,['status'])||'').trim().toUpperCase()==='ACTIVE');
+  const blank=[], overdue=[];
+  activeRows.forEach(r=>{
+    const name=String(findVal(r,['name','full name','fullname'])||'').trim();
+    const phone=String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
+    const lastActStr=String(findVal(r,LAD_KEYS)||'').trim();
+    const lastAct=lastActStr?parseDate(lastActStr):null;
+    const lastActIso=lastAct?lastAct.toISOString().slice(0,10):'';
+    const regDate=String(findVal(r,['register date','registerdate'])||'').trim();
+    const entry={name,phone,regDate,lastActivityDate:lastActIso};
+    if(!lastActStr||!lastActIso) blank.push(entry);
+    else if(lastActIso<cutoffStr) overdue.push(entry);
+  });
+  return {hasColumn, totalActive:activeRows.length, cutoffStr,
+    blank: hasColumn?blank:[], blankCount: hasColumn?blank.length:activeRows.length,
+    overdue, overdueCount:overdue.length};
+}
+
 // ── Data storage ──
 function storeContacts(rows, fi){
   const processed = rows.map(r=>{
     const status = findVal(r,['status']);
     const regDate = parseDate(findVal(r,['register date','registerdate']));
-    const name = String(findVal(r,['name','full name','fullname'])||'').trim();
-    const phone = String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
-    const lastActStr = String(findVal(r,['last activity date','lastactivitydate','last activity','lastactivity','last login','lastlogin'])||'').trim();
-    const lastAct = lastActStr ? parseDate(lastActStr) : null;
-    return {
-      status,
-      regDate: regDate ? getPeriod(regDate) : null,
-      name, phone,
-      lastActivityDate: lastAct ? lastAct.toISOString().slice(0,10) : (lastActStr||'')
-    };
+    return {status, regDate: regDate ? getPeriod(regDate) : null};
   }).filter(r=>r.regDate);
   localStorage.setItem('ld_contacts', JSON.stringify({rows:processed, fi}));
 }
@@ -1224,14 +1243,8 @@ function recomputeAndRender(){
     const active = months.map(m=>byM[m]);
     const pch = active.map((v,i)=>i===0?null:(active[i-1]?((v-active[i-1])/active[i-1]):null));
     D.s1 = {months, active, pch, total_active: active.reduce((a,b)=>a+b,0)};
-
-    // Inactive analysis — among ALL ACTIVE members (any regDate)
-    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth()-3);
-    const cutoffStr = cutoff.toISOString().slice(0,10);
-    const allActive = rows.filter(r=>String(r.status).trim().toUpperCase()==='ACTIVE');
-    const blankAct  = allActive.filter(r=>!r.lastActivityDate||r.lastActivityDate==='');
-    const overdueAct= allActive.filter(r=>r.lastActivityDate&&r.lastActivityDate!==''&&r.lastActivityDate<cutoffStr);
-    D.s1.inactive={cutoffStr, blank:blankAct, overdue:overdueAct, totalActive:allActive.length};
+    // Attach in-memory inactive data (null if page was refreshed without re-uploading)
+    D.s1.inactive = inactiveData;
   }
 
   // -- s3, s4a, s4b partial, s5 partial --
@@ -1518,32 +1531,37 @@ function renderP2(){
   // Inactive members section
   const el=document.getElementById('inactiveSection');
   const ia=s.inactive;
-  if(!ia){el.style.display='none';return;}
-  const hasLastAct = ia.totalActive>0 && (ia.blank.length+ia.overdue.length)>0 || ia.blank.length===ia.totalActive;
-  // Show section even if zero results — to confirm column was found
-  const cutoffLabel = ia.cutoffStr ? ia.cutoffStr.slice(0,7).replace('-','/') : '';
+  if(!ia){
+    el.style.display='block';
+    el.innerHTML=`<div class="inactive-section"><div class="inactive-title" style="color:var(--mut);font-weight:400;font-size:12px;">😴 Last Activity Date — อัปโหลดไฟล์ Contacts อีกครั้งเพื่อดูข้อมูล (ข้อมูลนี้ไม่ได้บันทึกถาวร)</div></div>`;
+    return;
+  }
+  const cutoffLabel=ia.cutoffStr?ia.cutoffStr.slice(0,7).replace('-','/'):'-';
+  const blankCount=ia.blankCount;
+  const noColNote=!ia.hasColumn?`<div style="font-size:10px;color:#e67e22;margin-top:4px;">⚠️ ไม่พบคอลัมน์ Last Activity Date ในไฟล์</div>`:'';
   el.style.display='block';
   el.innerHTML=`<div class="inactive-section">
     <div class="inactive-title">😴 สมาชิก ACTIVE ที่ไม่ได้ใช้งาน &nbsp;—&nbsp; จาก ${fmt(ia.totalActive)} คน ACTIVE ทั้งหมด</div>
+    ${noColNote}
     <div class="inactive-grid">
       <div class="inactive-card blank">
         <div class="inactive-label">🔲 ไม่มีข้อมูล Last Activity</div>
-        <div class="inactive-count">${fmt(ia.blank.length)}</div>
-        <div class="inactive-sub">คน — ไม่เคยมีประวัติการเข้าระบบ<br>หรือไฟล์ไม่มีคอลัมน์ Last Activity Date</div>
-        ${ia.blank.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('blank')">📥 Export รายชื่อ (${ia.blank.length} คน) .csv</button>`:''}
+        <div class="inactive-count">${fmt(blankCount)}</div>
+        <div class="inactive-sub">คน — ไม่เคยมีประวัติการเข้าระบบ${!ia.hasColumn?' (ไม่พบคอลัมน์ในไฟล์)':''}</div>
+        ${ia.blank.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('blank')">📥 Export รายชื่อ (${fmt(ia.blank.length)} คน) .csv</button>`:''}
       </div>
       <div class="inactive-card overdue">
         <div class="inactive-label">⏰ ไม่ได้เข้าระบบ &gt;3 เดือน (ก่อน ${cutoffLabel})</div>
-        <div class="inactive-count">${fmt(ia.overdue.length)}</div>
-        <div class="inactive-sub">คน — Last Activity Date น้อยกว่า ${cutoffLabel}<br>อาจเป็นลูกค้าที่หลุดออกจากระบบ</div>
-        ${ia.overdue.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('overdue')">📥 Export รายชื่อ (${ia.overdue.length} คน) .csv</button>`:''}
+        <div class="inactive-count">${fmt(ia.overdueCount)}</div>
+        <div class="inactive-sub">คน — Last Activity Date ก่อน ${cutoffLabel}<br>อาจเป็นลูกค้าที่หลุดออกจากระบบ</div>
+        ${ia.overdueCount>0?`<button class="inactive-export" onclick="exportInactiveMembers('overdue')">📥 Export รายชื่อ (${fmt(ia.overdueCount)} คน) .csv</button>`:''}
       </div>
     </div>
   </div>`;
 }
 
 function exportInactiveMembers(type){
-  const ia=D?.s1?.inactive; if(!ia) return;
+  const ia=inactiveData; if(!ia) return;
   const members=type==='blank'?ia.blank:ia.overdue;
   if(!members.length) return;
   const headers=['ชื่อ','เบอร์โทร','วันสมัคร','Last Activity Date','Status'];
