@@ -212,6 +212,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 .qa-dot{flex-shrink:0;width:7px;height:7px;border-radius:50%;margin-top:3px;}
 .qa-dot.err{background:#e74c3c;}
 .qa-dot.warn{background:#f39c12;}
+.qa-toggle{font-size:10px;color:var(--brand);cursor:pointer;border:none;background:none;padding:2px 0;margin-top:2px;text-decoration:underline;display:block;}
+.qa-export-btn{margin-top:10px;font-size:10px;background:none;border:1px solid #ccc;border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--mut);width:100%;}
+.qa-export-btn:hover{background:#f0f0f0;}
 @media(max-width:900px){.qa-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.grid2,.upload-grid{grid-template-columns:1fr;}.kpis,.db-summary{grid-template-columns:repeat(2,1fr);}.settings-grid{grid-template-columns:1fr;}}
 </style>
@@ -983,31 +986,26 @@ function storeRedemptions(rows, fi){
 // ── Data Quality Validators ──
 function validateContacts(rows){
   const issues=[], phones={};
-  let dupPhone=0, badDate=0;
   rows.forEach((r,i)=>{
     const phone=String(findVal(r,['phone','tel','telephone','mobile','member tel','membertel'])||'').replace(/\D/g,'').trim();
     const name=String(findVal(r,['name','full name','fullname'])||'').trim();
     const dateStr=findVal(r,['register date','registerdate']);
     if(phone){
       if(phones[phone]){
-        dupPhone++;
-        if(dupPhone<=5) issues.push({level:'err',msg:`เบอร์ซ้ำ: ${phone}${name?' ('+name+')':''}  แถว ${i+2}`});
+        issues.push({level:'err',type:'เบอร์ซ้ำ',row:i+2,msg:`เบอร์ ${phone}${name?' — '+name:''}  (แถว ${i+2}, ซ้ำกับแถว ${phones[phone]})`,detail:phone});
       } else phones[phone]=i+2;
     }
     if(dateStr&&!parseDate(dateStr)){
-      badDate++;
-      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dateStr}"  แถว ${i+2}`});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dateStr}"  (แถว ${i+2})`,detail:String(dateStr)});
     }
   });
-  if(dupPhone>5) issues.push({level:'err',msg:`…และอีก ${dupPhone-5} รายที่เบอร์ซ้ำกัน`});
-  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const dupCount=issues.filter(x=>x.type==='เบอร์ซ้ำ').length;
   const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
-  return {label:'Contacts',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupPhone,issues};
+  return {label:'Contacts',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount,issues};
 }
 
 function validatePointReport(rows){
   const issues=[], seen={};
-  let dupRows=0, zeroSaleGiven=0, badDate=0;
   rows.forEach((r,i)=>{
     const dt=String(findVal(r,['date & time','date&time','datetime','date time'])||'').trim();
     const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
@@ -1017,29 +1015,23 @@ function validatePointReport(rows){
     const key=`${dt}|${tel}|${pts}`;
     if(tel&&dt){
       if(seen[key]){
-        dupRows++;
-        if(dupRows<=5) issues.push({level:'err',msg:`แถวซ้ำ: ${dt} | tel ${tel} | pts ${pts}`});
+        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | pts ${pts}  (แถว ${i+2})`,detail:`${dt}|${tel}|${pts}`});
       } else seen[key]=i+2;
     }
     if((ptype==='given'||ptype==='give')&&sale===0){
-      zeroSaleGiven++;
-      if(zeroSaleGiven<=3) issues.push({level:'warn',msg:`GIVEN แต่ยอดขาย 0  แถว ${i+2}`});
+      issues.push({level:'warn',type:'GIVEN ยอดขาย 0',row:i+2,msg:`GIVEN points แต่ยอดขาย = 0  (แถว ${i+2}, tel ${tel||'-'})`,detail:`tel:${tel}`});
     }
     if(dt&&!parseDate(dt)){
-      badDate++;
-      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dt}"  แถว ${i+2}`});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,detail:dt});
     }
   });
-  if(dupRows>5) issues.push({level:'err',msg:`…และอีก ${dupRows-5} แถวที่ซ้ำกัน`});
-  if(zeroSaleGiven>3) issues.push({level:'warn',msg:`…และอีก ${zeroSaleGiven-3} แถว GIVEN ที่ยอดขาย 0`});
-  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const dupCount=issues.filter(x=>x.type==='แถวซ้ำ').length;
   const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
-  return {label:'Point Report',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupRows,issues};
+  return {label:'Point Report',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount,issues};
 }
 
 function validateRedemptions(rows){
   const issues=[], seen={};
-  let dupRows=0, zeroPts=0, badDate=0;
   rows.forEach((r,i)=>{
     const dt=String(findVal(r,['date & time','date&time','datetime','date time'])||'').trim();
     const tel=String(findVal(r,['member tel','membertel','tel','phone'])||'').replace(/\D/g,'').trim();
@@ -1048,24 +1040,48 @@ function validateRedemptions(rows){
     const key=`${dt}|${tel}|${reward}|${pts}`;
     if(tel&&dt){
       if(seen[key]){
-        dupRows++;
-        if(dupRows<=5) issues.push({level:'err',msg:`แถวซ้ำ: ${dt} | tel ${tel} | ${reward}`});
+        issues.push({level:'err',type:'แถวซ้ำ',row:i+2,msg:`ซ้ำ: ${dt} | tel ${tel} | ${reward}  (แถว ${i+2})`,detail:`${dt}|${tel}|${reward}`});
       } else seen[key]=i+2;
     }
     if(pts===0){
-      zeroPts++;
-      if(zeroPts<=3) issues.push({level:'warn',msg:`Points Used = 0  แถว ${i+2}`});
+      issues.push({level:'warn',type:'Points Used 0',row:i+2,msg:`Points Used = 0  (แถว ${i+2}, tel ${tel||'-'})`,detail:`tel:${tel}`});
     }
     if(dt&&!parseDate(dt)){
-      badDate++;
-      if(badDate<=3) issues.push({level:'warn',msg:`วันที่อ่านไม่ได้: "${dt}"  แถว ${i+2}`});
+      issues.push({level:'warn',type:'วันที่ผิดรูป',row:i+2,msg:`วันที่อ่านไม่ได้: "${dt}"  (แถว ${i+2})`,detail:dt});
     }
   });
-  if(dupRows>5) issues.push({level:'err',msg:`…และอีก ${dupRows-5} แถวที่ซ้ำกัน`});
-  if(zeroPts>3) issues.push({level:'warn',msg:`…และอีก ${zeroPts-3} แถวที่ Points Used เป็น 0`});
-  if(badDate>3) issues.push({level:'warn',msg:`…และอีก ${badDate-3} แถวที่วันที่ผิดรูปแบบ`});
+  const dupCount=issues.filter(x=>x.type==='แถวซ้ำ').length;
   const hasErr=issues.some(x=>x.level==='err'), hasWarn=issues.some(x=>x.level==='warn');
-  return {label:'Redemptions',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount:dupRows,issues};
+  return {label:'Redemptions',total:rows.length,level:hasErr?'err':hasWarn?'warn':'ok',dupCount,issues};
+}
+
+function qaIssueList(issues, slot, expanded){
+  if(!issues.length) return '';
+  const SHOW=5;
+  const shown = expanded ? issues : issues.slice(0,SHOW);
+  const more = issues.length - SHOW;
+  const items = shown.map(x=>`<li><span class="qa-dot ${x.level}"></span><span>${x.msg}</span></li>`).join('');
+  const toggle = (!expanded && more>0)
+    ? `<li style="list-style:none"><button class="qa-toggle" onclick="qaExpand(${slot})">ดูอีก ${more} รายการ ▾</button></li>`
+    : (expanded && issues.length>SHOW ? `<li style="list-style:none"><button class="qa-toggle" onclick="qaCollapse(${slot})">ย่อ ▴</button></li>` : '');
+  return `<ul class="qa-issues">${items}${toggle}</ul>`;
+}
+
+const qaExpanded=[false,false,false];
+function qaExpand(slot){qaExpanded[slot]=true;renderQualityReport();}
+function qaCollapse(slot){qaExpanded[slot]=false;renderQualityReport();}
+
+function exportQaReport(slot){
+  const q=qaStore[slot]; if(!q||!q.issues.length) return;
+  const rows=[['ประเภท','ระดับ','แถว','รายละเอียด']];
+  q.issues.forEach(x=>rows.push([x.type, x.level==='err'?'ERROR':'WARNING', x.row, x.detail||x.msg]));
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const bom='﻿';
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`qa_report_${q.label.replace(/\s/g,'_')}.csv`;
+  a.click();
 }
 
 function renderQualityReport(){
@@ -1077,12 +1093,14 @@ function renderQualityReport(){
     const icon=q.level==='err'?'🔴':q.level==='warn'?'🟡':'🟢';
     const labelTh=q.level==='err'?'พบปัญหา':q.level==='warn'?'ควรตรวจสอบ':'ผ่านการตรวจ';
     const dupNote=q.dupCount>0?` &nbsp;·&nbsp; <b style="color:#c0392b">${q.dupCount} แถวซ้ำ</b>`:'';
-    const issHtml=q.issues.length?`<ul class="qa-issues">${q.issues.map(x=>`<li><span class="qa-dot ${x.level}"></span><span>${x.msg}</span></li>`).join('')}</ul>`:'';
+    const issHtml=qaIssueList(q.issues, i, qaExpanded[i]);
+    const exportBtn=q.issues.length?`<button class="qa-export-btn" onclick="exportQaReport(${i})">📥 Export รายงาน .csv</button>`:'';
     return `<div class="qa-file-card ${q.level}">
       <div class="qa-file-name">${ICONS[i]} ${NAMES[i]}</div>
       <span class="qa-badge ${q.level}">${icon} ${labelTh}</span>
-      <div class="qa-meta">${q.total.toLocaleString()} แถว${dupNote}</div>
+      <div class="qa-meta">${q.total.toLocaleString()} แถว${dupNote} &nbsp;·&nbsp; ${q.issues.length} รายการ</div>
       ${issHtml}
+      ${exportBtn}
     </div>`;
   }).join('');
   const overallLevel=qaStore.filter(Boolean).reduce((w,q)=>q.level==='err'?'err':w==='err'?'err':q.level==='warn'?'warn':w,'ok');
