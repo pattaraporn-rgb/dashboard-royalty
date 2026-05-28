@@ -1939,7 +1939,75 @@ document.addEventListener('click',e=>{
 });
 
 function copyGasCode(){
-  const code=document.getElementById('gasTemplate').innerText;
+  const code=`// ════ Google Apps Script — Loyalty Dashboard v2 (Read + Write) ════
+// 1. เปิด Google Sheet → Extensions → Apps Script
+// 2. วาง code ทั้งหมด → Run "setupSheets" ครั้งแรก → สร้าง Sheets อัตโนมัติ
+// 3. Deploy → New Deployment → Web App → Execute as: Me, Access: Anyone → Copy URL
+// 4. ทุกครั้งที่แก้ code ต้อง Deploy version ใหม่เพื่ออัปเดต
+
+const SHEET_HEADERS = {
+  "contacts":     ["Name","Status","Register Date","Phone No","Gender","Tier","Points balance"],
+  "Point Report": ["Date & time","Member name","Member tel","Point type","Points collected","Sale amount (THB)","Source","Channel","Sub channel"],
+  "Redemptions":  ["Date & time","Reward name","Reward code","Points used","Member name","Member tel"]
+};
+
+function setupSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.entries(SHEET_HEADERS).forEach(([name, headers]) => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) { sh = ss.insertSheet(name); }
+    if (sh.getLastRow() === 0) {
+      sh.appendRow(headers);
+      sh.getRange(1,1,1,headers.length).setFontWeight("bold").setBackground("#004EE6").setFontColor("#ffffff");
+      sh.setFrozenRows(1);
+    }
+  });
+  SpreadsheetApp.getUi().alert("✅ สร้าง Sheets สำเร็จ!");
+}
+
+function doGet(e) {
+  const action = (e.parameter && e.parameter.action) || "read";
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (action === "read") {
+    return jsonOut({
+      contacts:    getData(ss, "contacts"),
+      pointReport: getData(ss, "Point Report"),
+      redemptions: getData(ss, "Redemptions"),
+      exportedAt:  new Date().toISOString()
+    });
+  }
+  if (action === "insert") {
+    const sh = ss.getSheetByName(e.parameter.sheet);
+    if (!sh) return jsonOut({success:false, error:"Sheet not found"});
+    const data = JSON.parse(e.parameter.data || "{}");
+    const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+    sh.appendRow(headers.map(h => data[h] !== undefined ? data[h] : ""));
+    return jsonOut({success:true, insertedAt:new Date().toISOString()});
+  }
+  if (action === "delete") {
+    const sh = ss.getSheetByName(e.parameter.sheet);
+    if (!sh) return jsonOut({success:false, error:"Sheet not found"});
+    sh.deleteRow(parseInt(e.parameter.rowId) + 2);
+    return jsonOut({success:true});
+  }
+  return jsonOut({error:"Unknown action"});
+}
+
+function getData(ss, sheetName) {
+  const sh = ss.getSheetByName(sheetName);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  return rows.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h,i) => { if(h) obj[h] = row[i]; });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v !== ""));
+}
+
+function jsonOut(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}`;
   navigator.clipboard.writeText(code).then(()=>{
     const btn=event.target;
     btn.textContent='✓ คัดลอกแล้ว!';
