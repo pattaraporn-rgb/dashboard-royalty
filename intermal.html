@@ -955,6 +955,9 @@ function processFile(file, slot){
       // Compute inactive analysis from raw contacts (in-memory only, avoids localStorage quota)
       if(slot===0) inactiveData = computeInactiveData(rows);
 
+      // Backup full raw rows to Google Sheet (fire-and-forget, non-blocking)
+      if(localStorage.getItem('ld_api_url')) backupToSheet(slot, rows);
+
       // Process and store
       if(slot===0) storeContacts(rows, fi);
       else if(slot===1) storePointReport(rows, fi);
@@ -1939,7 +1942,7 @@ document.addEventListener('click',e=>{
 });
 
 function copyGasCode(){
-  const code=`// ════ Google Apps Script — Loyalty Dashboard v2 (Read + Write) ════
+  const code=`// ════ Google Apps Script — Loyalty Dashboard v2 (Read + Write + Backup) ════
 // 1. เปิด Google Sheet → Extensions → Apps Script
 // 2. วาง code ทั้งหมด → Run "setupSheets" ครั้งแรก → สร้าง Sheets อัตโนมัติ
 // 3. Deploy → New Deployment → Web App → Execute as: Me, Access: Anyone → Copy URL
@@ -1965,6 +1968,7 @@ function setupSheets() {
   SpreadsheetApp.getUi().alert("✅ สร้าง Sheets สำเร็จ!");
 }
 
+// GET: read data or single insert/delete
 function doGet(e) {
   const action = (e.parameter && e.parameter.action) || "read";
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1993,6 +1997,30 @@ function doGet(e) {
   return jsonOut({error:"Unknown action"});
 }
 
+// POST: batch replace — รับข้อมูลทั้งหมดจาก Excel upload แล้วเขียนทับ Sheet
+function doPost(e) {
+  try {
+    const body = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (body.action === "batch_replace") {
+      const sh = ss.getSheetByName(body.sheet);
+      if (!sh) return jsonOut({success:false, error:"Sheet not found: " + body.sheet});
+      const rows = body.rows || [];
+      sh.clearContents();
+      if (rows.length === 0) return jsonOut({success:true, inserted:0});
+      const headers = Object.keys(rows[0]);
+      const values = [headers, ...rows.map(r => headers.map(h => r[h] !== undefined ? String(r[h]) : ""))];
+      sh.getRange(1, 1, values.length, headers.length).setValues(values);
+      sh.getRange(1,1,1,headers.length).setFontWeight("bold").setBackground("#004EE6").setFontColor("#ffffff");
+      sh.setFrozenRows(1);
+      return jsonOut({success:true, inserted:rows.length, sheet:body.sheet});
+    }
+  } catch(err) {
+    return jsonOut({success:false, error:err.message});
+  }
+  return jsonOut({error:"Unknown action"});
+}
+
 function getData(ss, sheetName) {
   const sh = ss.getSheetByName(sheetName);
   if (!sh || sh.getLastRow() < 2) return [];
@@ -2013,6 +2041,31 @@ function jsonOut(data) {
     btn.textContent='✓ คัดลอกแล้ว!';
     setTimeout(()=>btn.textContent='📋 คัดลอก',2000);
   });
+}
+
+// ── Backup raw rows to Google Sheet after every Excel upload ──
+async function backupToSheet(slot, rows){
+  const url=localStorage.getItem('ld_api_url')||'';
+  if(!url) return;
+  const SHEET_NAMES=['contacts','Point Report','Redemptions'];
+  const sheet=SHEET_NAMES[slot];
+  addLog('info',`⏳ Backup ${rows.length.toLocaleString()} แถว → Sheet "${sheet}"...`);
+  try{
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'batch_replace',sheet,rows})
+    });
+    try{
+      const json=await res.json();
+      if(json.success) addLog('ok',`✅ Backup สำเร็จ — "${sheet}" (${json.inserted.toLocaleString()} แถว)`);
+      else addLog('err',`❌ Backup ล้มเหลว: ${json.error}`);
+    }catch{
+      addLog('ok',`✅ ส่งข้อมูลไปยัง Sheet แล้ว (${rows.length.toLocaleString()} แถว) — ตรวจสอบใน Sheet โดยตรง`);
+    }
+  }catch(err){
+    addLog('warn',`⚠️ Backup ไม่สำเร็จ: ${err.message}`);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
