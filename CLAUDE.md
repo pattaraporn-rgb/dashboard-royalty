@@ -1,5 +1,15 @@
 # Loyalty Dashboard — Project Rules for Claude
 
+## Icon system
+
+- **All UI icons use Lucide** (lucide.dev) via CDN — `<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js">`
+- Use `<i data-lucide="icon-name"></i>` as placeholder — Lucide replaces with SVG when `lucide.createIcons()` runs
+- Helper `refreshIcons()` in `utils.js` — call after any `innerHTML` update that contains `data-lucide`
+- Already called in: `switchTab` (app.js), `recomputeAndRender` (compute.js), `renderQualityReport` (validate.js). Add to new render functions that inject icons.
+- **No emojis as icons** — applies to HTML, JS template strings, and log messages. Log status conveyed by `log-ok` / `log-err` / `log-warn` CSS class colors.
+- Icon size classes: `.icon-sm` (14px) `.icon-md` (18px) `.icon-lg` (24px) `.icon-xl` (32px); default size from font-size
+- Combine `class="with-icon"` on parent → inline-flex + gap for text+icon alignment
+
 ## Architecture
 - Static site on GitHub Pages (no server, no build step)
 - HTML structure in `index.html`; CSS inline in `<style>` (kept inline so `exportAsHTML` can read it)

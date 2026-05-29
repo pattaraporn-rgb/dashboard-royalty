@@ -88,5 +88,5 @@ function uploadLogo(input){
 function clearLogo(){
   localStorage.removeItem('ld_logo');
   document.getElementById('logoImg').src = 'https://rewarding-rocket.s3.ap-southeast-1.amazonaws.com/1743486056316-success%20copy%202%201.png';
-  document.getElementById('logoPreviewBox').innerHTML = '<span style="font-size:24px">📷</span><span>คลิกเพื่ออัปโหลด</span>';
+  document.getElementById('logoPreviewBox').innerHTML = '<i data-lucide="camera" class="icon-lg"></i><span>คลิกเพื่ออัปโหลด</span>';refreshIcons();
 }

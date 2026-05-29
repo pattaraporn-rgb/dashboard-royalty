@@ -128,25 +128,25 @@ function exportQaReport(slot){
 function renderQualityReport(){
   const el=document.getElementById('qaSection');
   if(!qaStore.some(q=>q)){el.style.display='none';return;}
-  const ICONS=['📋','⭐','🎁'], NAMES=['Contacts','Point Report','Redemptions'];
+  const ICONS=['users','star','gift'], NAMES=['Contacts','Point Report','Redemptions'];
+  const levelIcon=lvl=>lvl==='err'?'<i data-lucide="x-circle" style="color:#C8102E"></i>':lvl==='warn'?'<i data-lucide="alert-triangle" style="color:#f39c12"></i>':'<i data-lucide="check-circle" style="color:#1a8f3c"></i>';
   const cards=qaStore.map((q,i)=>{
-    if(!q) return `<div class="qa-file-card"><div class="qa-file-name">${ICONS[i]} ${NAMES[i]}</div><span class="qa-badge empty">ยังไม่อัปโหลด</span></div>`;
-    const icon=q.level==='err'?'🔴':q.level==='warn'?'🟡':'🟢';
+    if(!q) return `<div class="qa-file-card"><div class="qa-file-name with-icon"><i data-lucide="${ICONS[i]}" class="icon-sm"></i> ${NAMES[i]}</div><span class="qa-badge empty">ยังไม่อัปโหลด</span></div>`;
     const labelTh=q.level==='err'?'พบปัญหา':q.level==='warn'?'ควรตรวจสอบ':'ผ่านการตรวจ';
     const dupNote=q.dupCount>0?` &nbsp;·&nbsp; <b style="color:#c0392b">${q.dupCount} แถวซ้ำ</b>`:'';
     const issHtml=qaIssueList(q.issues, i, qaExpanded[i]);
-    const exportBtn=q.issues.length?`<button class="qa-export-btn" onclick="exportQaReport(${i})">📥 Export รายงาน .csv</button>`:'';
+    const exportBtn=q.issues.length?`<button class="qa-export-btn" onclick="exportQaReport(${i})"><i data-lucide="download" class="icon-sm"></i> Export รายงาน .csv</button>`:'';
     return `<div class="qa-file-card ${q.level}">
-      <div class="qa-file-name">${ICONS[i]} ${NAMES[i]}</div>
-      <span class="qa-badge ${q.level}">${icon} ${labelTh}</span>
+      <div class="qa-file-name with-icon"><i data-lucide="${ICONS[i]}" class="icon-sm"></i> ${NAMES[i]}</div>
+      <span class="qa-badge ${q.level} with-icon">${levelIcon(q.level)} ${labelTh}</span>
       <div class="qa-meta">${q.total.toLocaleString()} แถว${dupNote} &nbsp;·&nbsp; ${q.issues.length} รายการ</div>
       ${issHtml}
       ${exportBtn}
     </div>`;
   }).join('');
   const overallLevel=qaStore.filter(Boolean).reduce((w,q)=>q.level==='err'?'err':w==='err'?'err':q.level==='warn'?'warn':w,'ok');
-  const overallIcon=overallLevel==='err'?'🔴':overallLevel==='warn'?'🟡':'🟢';
   const overallMsg=overallLevel==='err'?'พบข้อมูลซ้ำหรือผิดพลาด — กรุณาตรวจสอบก่อนนำเสนอ':overallLevel==='warn'?'มีรายการที่ควรตรวจสอบ':'ข้อมูลทั้งหมดผ่านการตรวจสอบ';
   el.style.display='block';
-  el.innerHTML=`<div class="qa-section"><div class="qa-title">${overallIcon} Data Quality Check &nbsp;—&nbsp; ${overallMsg}</div><div class="qa-grid">${cards}</div></div>`;
+  el.innerHTML=`<div class="qa-section"><div class="qa-title with-icon">${levelIcon(overallLevel)} Data Quality Check &nbsp;—&nbsp; ${overallMsg}</div><div class="qa-grid">${cards}</div></div>`;
+  refreshIcons();
 }

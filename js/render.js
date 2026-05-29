@@ -62,7 +62,7 @@ function updateFileCard(slot, fi){
   const prog=document.getElementById('uc'+slot+'_prog');
   if(fi&&fi.rows){
     card.classList.add('has-data');
-    status.innerHTML=`<span class="loaded">✓ โหลดแล้ว — ${fi.rows.toLocaleString()} แถว</span><br><span style="color:#888;font-size:10px">${fi.name} · ${fi.uploadDate||''}</span>`;
+    status.innerHTML=`<span class="loaded with-icon"><i data-lucide="check-circle" class="icon-sm"></i> โหลดแล้ว — ${fi.rows.toLocaleString()} แถว</span><br><span style="color:#888;font-size:10px">${fi.name} · ${fi.uploadDate||''}</span>`;
     prog.style.width='100%';
   } else {
     card.classList.remove('has-data');
@@ -81,22 +81,22 @@ function updateDbSummary(){
   el.innerHTML=`
     <div class="db-sum-card ${hasContact?'ok':''}">
       <div class="db-sum-label">Contacts File</div>
-      <div class="db-sum-val">${hasContact?'✓':'–'}</div>
+      <div class="db-sum-val">${hasContact?'<i data-lucide="check" style="color:#1a8f3c"></i>':'–'}</div>
       <div class="db-sum-sub">${hasContact?(fileInfo[0].rows||0).toLocaleString()+' แถว':'ยังไม่อัปโหลด'}</div>
     </div>
     <div class="db-sum-card ${hasPoint?'ok':''}">
       <div class="db-sum-label">Point Report</div>
-      <div class="db-sum-val">${hasPoint?'✓':'–'}</div>
+      <div class="db-sum-val">${hasPoint?'<i data-lucide="check" style="color:#1a8f3c"></i>':'–'}</div>
       <div class="db-sum-sub">${hasPoint?(fileInfo[1].rows||0).toLocaleString()+' แถว':'ยังไม่อัปโหลด'}</div>
     </div>
     <div class="db-sum-card ${hasRedemp?'ok':''}">
       <div class="db-sum-label">Redemptions</div>
-      <div class="db-sum-val">${hasRedemp?'✓':'–'}</div>
+      <div class="db-sum-val">${hasRedemp?'<i data-lucide="check" style="color:#1a8f3c"></i>':'–'}</div>
       <div class="db-sum-sub">${hasRedemp?(fileInfo[2].rows||0).toLocaleString()+' แถว':'ยังไม่อัปโหลด'}</div>
     </div>
     <div class="db-sum-card ${allOk?'ok':'warn'}">
       <div class="db-sum-label">Dashboard</div>
-      <div class="db-sum-val">${allOk?'✅':'⚠️'}</div>
+      <div class="db-sum-val">${allOk?'<i data-lucide="check-circle" style="color:#1a8f3c"></i>':'<i data-lucide="alert-triangle" style="color:#f39c12"></i>'}</div>
       <div class="db-sum-sub">${allOk?'พร้อมแสดงผล':'ต้องการไฟล์ครบ 3 ไฟล์'}</div>
     </div>`;
 }
@@ -163,35 +163,35 @@ function renderP2(){
   const ia=s.inactive;
   if(!ia){
     el.style.display='block';
-    el.innerHTML=`<div class="inactive-section"><div class="inactive-title" style="color:var(--mut);font-weight:400;font-size:12px;">😴 Last Activity Date — อัปโหลดไฟล์ Contacts อีกครั้งเพื่อดูข้อมูล (ข้อมูลนี้ไม่ได้บันทึกถาวร)</div></div>`;
+    el.innerHTML=`<div class="inactive-section"><div class="inactive-title with-icon" style="color:var(--mut);font-weight:400;font-size:12px;"><i data-lucide="moon" class="icon-sm"></i> Last Activity Date — อัปโหลดไฟล์ Contacts อีกครั้งเพื่อดูข้อมูล (ข้อมูลนี้ไม่ได้บันทึกถาวร)</div></div>`;
     return;
   }
   const cutoffLabel=ia.cutoffStr?ia.cutoffStr.slice(0,7).replace('-','/'):'-';
   const blankCount=ia.blankCount;
-  const noColNote=!ia.hasColumn?`<div style="font-size:10px;color:#e67e22;margin-top:4px;">⚠️ ไม่พบคอลัมน์ Last Activity Date ในไฟล์</div>`:'';
+  const noColNote=!ia.hasColumn?`<div class="with-icon" style="font-size:10px;color:#e67e22;margin-top:4px;"><i data-lucide="alert-triangle" class="icon-sm"></i> ไม่พบคอลัมน์ Last Activity Date ในไฟล์</div>`:'';
   el.style.display='block';
   el.innerHTML=`<div class="inactive-section">
-    <div class="inactive-title">😴 สมาชิก ACTIVE ที่ไม่ได้ใช้งาน &nbsp;—&nbsp; จาก ${fmt(ia.totalActive)} คน ACTIVE ทั้งหมด</div>
+    <div class="inactive-title with-icon"><i data-lucide="moon"></i> สมาชิก ACTIVE ที่ไม่ได้ใช้งาน &nbsp;—&nbsp; จาก ${fmt(ia.totalActive)} คน ACTIVE ทั้งหมด</div>
     ${noColNote}
     <div class="inactive-grid">
       <div class="inactive-card blank">
-        <div class="inactive-label">🔲 ไม่มีข้อมูล Last Activity</div>
+        <div class="inactive-label with-icon"><i data-lucide="help-circle" class="icon-sm"></i> ไม่มีข้อมูล Last Activity</div>
         <div class="inactive-count">${fmt(blankCount)}</div>
         <div class="inactive-sub">คน — ไม่เคยมีประวัติการเข้าระบบ${!ia.hasColumn?' (ไม่พบคอลัมน์ในไฟล์)':''}</div>
-        ${ia.blank.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('blank')">📥 Export รายชื่อ (${fmt(ia.blank.length)} คน) .csv</button>`:''}
+        ${ia.blank.length>0?`<button class="inactive-export" onclick="exportInactiveMembers('blank')"><i data-lucide="download" class="icon-sm"></i> Export รายชื่อ (${fmt(ia.blank.length)} คน) .csv</button>`:''}
       </div>
       <div class="inactive-card overdue">
-        <div class="inactive-label">⏰ ไม่ได้เข้าระบบ &gt;3 เดือน (ก่อน ${cutoffLabel})</div>
+        <div class="inactive-label with-icon"><i data-lucide="alarm-clock" class="icon-sm"></i> ไม่ได้เข้าระบบ &gt;3 เดือน (ก่อน ${cutoffLabel})</div>
         <div class="inactive-count">${fmt(ia.overdueCount)}</div>
         <div class="inactive-sub">คน — Last Activity Date ก่อน ${cutoffLabel}<br>อาจเป็นลูกค้าที่หลุดออกจากระบบ</div>
-        ${ia.overdueCount>0?`<button class="inactive-export" onclick="exportInactiveMembers('overdue')">📥 Export รายชื่อ (${fmt(ia.overdueCount)} คน) .csv</button>`:''}
+        ${ia.overdueCount>0?`<button class="inactive-export" onclick="exportInactiveMembers('overdue')"><i data-lucide="download" class="icon-sm"></i> Export รายชื่อ (${fmt(ia.overdueCount)} คน) .csv</button>`:''}
       </div>
     </div>
   </div>`;
 }
 
 function exportInactiveMembers(type){
-  const ia=inactiveData; if(!ia){alert('⚠️ ไม่พบข้อมูล กรุณาอัปโหลดไฟล์ Contacts ใหม่อีกครั้ง');return;}
+  const ia=inactiveData; if(!ia){alert('ไม่พบข้อมูล กรุณาอัปโหลดไฟล์ Contacts ใหม่อีกครั้ง');return;}
   const members=type==='blank'?ia.blank:ia.overdue;
   if(!members.length) return;
   const headers=['ชื่อ','เบอร์โทร','Line User ID','วันสมัคร','Last Activity Date','Status'];

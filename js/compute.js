@@ -154,6 +154,7 @@ function recomputeAndRender(){
   });
   const activeIdx=[...document.querySelectorAll('.panel')].findIndex(p=>p.classList.contains('active'));
   if(activeIdx>=2){ rendered[activeIdx]=false; renders[activeIdx](); rendered[activeIdx]=true; }
+  refreshIcons();
 }
 
 function loadStoredData(){

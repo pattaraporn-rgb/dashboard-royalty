@@ -122,8 +122,8 @@ function jsonOut(data) {
 }`;
   navigator.clipboard.writeText(code).then(()=>{
     const btn=event.target;
-    btn.textContent='✓ คัดลอกแล้ว!';
-    setTimeout(()=>btn.textContent='📋 คัดลอก',2000);
+    btn.textContent='คัดลอกแล้ว';
+    setTimeout(()=>{btn.innerHTML='<i data-lucide="clipboard" class="icon-sm"></i> คัดลอก';refreshIcons();},2000);
   });
 }
 
@@ -199,6 +199,7 @@ function exportAsHTML(){
       'document.documentElement.style.setProperty("--brand-light",lightenColor(br,0.9));'+
       'document.getElementById("appHeader").style.background="linear-gradient(120deg,"+darkenColor(br,0.3)+" 0%,"+br+" 60%,"+lightenColor(br,0.2)+" 100%)";'+
       'renderP2();renderP3();renderP4();renderP5();switchTab(2);'+
+      'if(typeof lucide!=="undefined")lucide.createIcons();'+
     '});',
   ].join('\n');
 
@@ -208,7 +209,7 @@ function exportAsHTML(){
 <div class="card">
   <div class="sh"><span class="snum">1</span><span class="stitle">New User Registration</span><span class="sen">ผู้ใช้รายใหม่ (ACTIVE)</span></div>
   <div class="desc">จำนวนผู้ใช้ใหม่สถานะ <b>ACTIVE</b> จัดกลุ่มตาม Register Date — ไม่รวมเดือนปัจจุบันที่ข้อมูลยังไม่ครบ</div>
-  <div id="p2_empty" class="empty-state" style="display:none"><div class="es-icon">👥</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p2_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="users"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p2_content" style="display:none"><div class="stat-row" id="kpi1"></div><div class="chartbox"><canvas id="c1"></canvas></div><div class="tbl-wrap"><div id="t1"></div></div><div class="note" id="n1"></div></div>
 </div></div>
 <!-- PANEL 2: SALES -->
@@ -216,14 +217,14 @@ function exportAsHTML(){
 <div class="card">
   <div class="sh"><span class="snum">2</span><span class="stitle">Sales Report</span><span class="sen">ยอดขาย (THB) แยกตามช่องทาง</span></div>
   <div class="desc">ยอดขาย (บาท) จาก Point Report เฉพาะ Point type = <b>GIVEN</b></div>
-  <div id="p3_empty" class="empty-state" style="display:none"><div class="es-icon">💰</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p3_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="circle-dollar-sign"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p3_content" style="display:none"><div class="stat-row" id="kpi3"></div><div class="chartbox"><canvas id="c3"></canvas></div><div class="tbl-wrap"><div id="t3"></div></div></div>
 </div></div>
 <!-- PANEL 3: POINTS -->
 <div class="panel" id="p4">
 <div class="card">
   <div class="sh"><span class="snum">3</span><span class="stitle">Points Report</span><span class="sen">คะแนนสะสม (GIVEN)</span></div>
-  <div id="p4_empty" class="empty-state" style="display:none"><div class="es-icon">⭐</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p4_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="star"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p4_content" style="display:none">
     <div class="stat-row" id="kpi4"></div>
     <div class="subhd">3.1 · คะแนนตามช่องทาง</div><div class="desc">คะแนนที่แจก (GIVEN) แยกตามช่องทาง — ไม่รวม Welcome Point</div>
@@ -238,7 +239,7 @@ function exportAsHTML(){
 <div class="card">
   <div class="sh"><span class="snum">4</span><span class="stitle">Redemption Report</span><span class="sen">การแลกของรางวัล</span></div>
   <div class="desc">จำนวนการแลกของรางวัล + เปรียบเทียบ Give Points กับ Used Points</div>
-  <div id="p5_empty" class="empty-state" style="display:none"><div class="es-icon">🎁</div><h3>ไม่มีข้อมูล</h3></div>
+  <div id="p5_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="gift"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p5_content" style="display:none">
     <div class="stat-row" id="kpi5"></div>
     <div class="grid2"><div class="chartbox sm"><canvas id="c5a"></canvas></div><div class="chartbox sm"><canvas id="c5b"></canvas></div></div>
@@ -257,6 +258,7 @@ function exportAsHTML(){
 <title>${storeName} — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"><\/script>
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"><\/script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -293,7 +295,7 @@ function exportAsHTML(){
 <b>วิธีคำนวณ:</b> %Ch = (เดือนนี้ − เดือนก่อนหน้า) ÷ เดือนก่อนหน้า &nbsp;|&nbsp; New User: Status=ACTIVE &nbsp;|&nbsp; Sales/Points: Point type=GIVEN<br>
 <div style="margin-top:10px;padding-top:10px;border-top:1px solid #222;color:#888;">© ${yr} Rocket Innovation Dashboard &nbsp;·&nbsp; จัดทำขึ้นเพื่อเป็นข้อมูล Internal และเพื่อวิเคราะห์ข้อมูลเท่านั้น</div>
 </footer>
-<div class="export-banner">📸 Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
+<div class="export-banner with-icon"><i data-lucide="camera" class="icon-sm"></i> Dashboard Snapshot &nbsp;·&nbsp; <span>Export วันที่ ${exportDate}</span></div>
 <script>${embJS}<\/script>
 </body></html>`;
 

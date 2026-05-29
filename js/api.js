@@ -10,7 +10,7 @@ function loadApiUrl(){
 function saveApiUrl(){
   const url=document.getElementById('apiUrlInput').value.trim();
   localStorage.setItem('ld_api_url',url);
-  addLog('info','✓ บันทึก URL แล้ว: '+url.substring(0,60)+'...');
+  addLog('info','บันทึก URL แล้ว: '+url.substring(0,60)+'...');
   updateCrudSection();
 }
 
@@ -29,7 +29,7 @@ async function supaFetchAll(table){
 }
 
 async function syncFromApi(){
-  addLog('info','⏳ กำลัง sync จาก Supabase...');
+  addLog('info','กำลัง sync จาก Supabase...');
   try{
     const [contacts,pointReport,redemptions]=await Promise.all([
       supaFetchAll('contacts'),
@@ -41,26 +41,26 @@ async function syncFromApi(){
       inactiveData = computeInactiveData(contacts);
       storeContacts(contacts,{name:'Supabase Sync',rows:contacts.length,uploadDate:ts});
       fileInfo[0]={name:'Supabase Sync',rows:contacts.length,uploadDate:ts};
-      addLog('ok',`✓ Contacts: ${contacts.length.toLocaleString()} แถว`);
+      addLog('ok',`Contacts: ${contacts.length.toLocaleString()} แถว`);
     }
     if(pointReport.length){
       storePointReport(pointReport,{name:'Supabase Sync',rows:pointReport.length,uploadDate:ts});
       fileInfo[1]={name:'Supabase Sync',rows:pointReport.length,uploadDate:ts};
-      addLog('ok',`✓ Point Report: ${pointReport.length.toLocaleString()} แถว`);
+      addLog('ok',`Point Report: ${pointReport.length.toLocaleString()} แถว`);
     }
     if(redemptions.length){
       storeRedemptions(redemptions,{name:'Supabase Sync',rows:redemptions.length,uploadDate:ts});
       fileInfo[2]={name:'Supabase Sync',rows:redemptions.length,uploadDate:ts};
-      addLog('ok',`✓ Redemptions: ${redemptions.length.toLocaleString()} แถว`);
+      addLog('ok',`Redemptions: ${redemptions.length.toLocaleString()} แถว`);
     }
     if(!contacts.length&&!pointReport.length&&!redemptions.length){
-      addLog('info','ℹ️ Supabase ยังไม่มีข้อมูล — อัปโหลด Excel เพื่อ backup ครั้งแรก');
+      addLog('info','Supabase ยังไม่มีข้อมูล — อัปโหลด Excel เพื่อ backup ครั้งแรก');
       return;
     }
     recomputeAndRender();
-    addLog('ok','✅ Sync สำเร็จ! Dashboard อัปเดตแล้ว');
+    addLog('ok','Sync สำเร็จ — Dashboard อัปเดตแล้ว');
   }catch(err){
-    addLog('err','❌ Sync ไม่สำเร็จ: '+err.message);
+    addLog('err','Sync ไม่สำเร็จ: '+err.message);
   }
 }
 
@@ -89,7 +89,7 @@ function addCrudLog(type,msg){
 
 async function writeToSheet(action,sheet,data){
   const table=SUPA_TABLE[sheet]||sheet;
-  addCrudLog('info','⏳ กำลังเขียนข้อมูลเข้า Supabase...');
+  addCrudLog('info','กำลังเขียนข้อมูลเข้า Supabase...');
   try{
     let res;
     if(action==='insert'){
@@ -98,10 +98,10 @@ async function writeToSheet(action,sheet,data){
       res=await fetch(`${SUPA.url}/${table}?id=eq.${data.rowId}`,{method:'DELETE',headers:SUPA.h});
     }
     if(res&&!res.ok){const t=await res.text();throw new Error(`HTTP ${res.status}: ${t}`);}
-    addCrudLog('ok','✅ บันทึกสำเร็จ กำลัง Sync Dashboard...');
+    addCrudLog('ok','บันทึกสำเร็จ — กำลัง Sync Dashboard...');
     return true;
   }catch(err){
-    addCrudLog('err','❌ เขียนไม่สำเร็จ: '+err.message);
+    addCrudLog('err','เขียนไม่สำเร็จ: '+err.message);
     return false;
   }
 }
@@ -184,12 +184,12 @@ async function submitAdd(type){
   }
   const btn=document.getElementById(btnId);
   const origLabel=btn.textContent;
-  btn.disabled=true; btn.textContent='⏳ กำลังบันทึก...';
+  btn.disabled=true; btn.textContent='กำลังบันทึก...';
   const ok=await writeToSheet('insert',sheet,data);
   btn.disabled=false; btn.textContent=origLabel;
   if(ok){
     closeAddModal(type);
-    addLog('info','⏳ Sync ข้อมูลใหม่จาก Sheets...');
+    addLog('info','Sync ข้อมูลใหม่จาก Sheets...');
     await syncFromApi();
   }
 }
@@ -209,7 +209,7 @@ async function backupToSheet(slot, rows){
   const cols=SUPA_COLS[table];
   // Keep only schema columns; all rows must have identical keys (PGRST102 requires uniform keys in batch insert)
   const clean=rows.map(r=>{const o={};cols.forEach(c=>{const keys=SUPA_ALIASES[c]||[c];const v=findVal(r,keys);o[c]=(v!==''&&v!=null)?(SUPA_DATE_COLS.has(c)?supaDateStr(v):v):null;});return o;});
-  addLog('info',`⏳ Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
+  addLog('info',`Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
   try{
     await fetch(`${SUPA.url}/${table}?id=gte.0`,{method:'DELETE',headers:SUPA.h});
     const CHUNK=500;
@@ -220,22 +220,22 @@ async function backupToSheet(slot, rows){
       });
       if(!res.ok){const t=await res.text();throw new Error(`HTTP ${res.status}: ${t}`);}
     }
-    addLog('ok',`✅ Backup สำเร็จ ${clean.length.toLocaleString()} แถว → Supabase`);
+    addLog('ok',`Backup สำเร็จ ${clean.length.toLocaleString()} แถว → Supabase`);
   }catch(err){
-    addLog('warn',`⚠️ Backup ไม่สำเร็จ: ${err.message}`);
+    addLog('warn',`Backup ไม่สำเร็จ: ${err.message}`);
   }
 }
 
 async function clearSheets(){
-  addLog('info','⏳ กำลังล้างข้อมูลใน Supabase...');
+  addLog('info','กำลังล้างข้อมูลใน Supabase...');
   try{
     await Promise.all([
       fetch(`${SUPA.url}/contacts?id=gte.0`,{method:'DELETE',headers:SUPA.h}),
       fetch(`${SUPA.url}/point_report?id=gte.0`,{method:'DELETE',headers:SUPA.h}),
       fetch(`${SUPA.url}/redemptions?id=gte.0`,{method:'DELETE',headers:SUPA.h})
     ]);
-    addLog('ok','✅ ล้างข้อมูลใน Supabase ทั้งหมดแล้ว');
+    addLog('ok','ล้างข้อมูลใน Supabase ทั้งหมดแล้ว');
   }catch(err){
-    addLog('warn',`⚠️ ล้างไม่สำเร็จ: ${err.message}`);
+    addLog('warn',`ล้างไม่สำเร็จ: ${err.message}`);
   }
 }

@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -233,6 +234,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 @media(max-width:700px){.inactive-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.qa-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){.grid2,.upload-grid{grid-template-columns:1fr;}.kpis,.db-summary{grid-template-columns:repeat(2,1fr);}.settings-grid{grid-template-columns:1fr;}}
+/* Lucide icon defaults — sized inline-block, stroke matches surrounding text color */
+[data-lucide]{display:inline-block;width:1em;height:1em;vertical-align:-0.125em;stroke-width:2;color:currentColor;}
+.icon-sm[data-lucide]{width:14px;height:14px;}
+.icon-md[data-lucide]{width:18px;height:18px;}
+.icon-lg[data-lucide]{width:24px;height:24px;}
+.icon-xl[data-lucide]{width:32px;height:32px;}
+/* Inline icon next to text — small gap, baseline align */
+.with-icon{display:inline-flex;align-items:center;gap:6px;}
 </style>
 </head>
 <body>
@@ -256,11 +265,11 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     </div>
     <div class="hd-actions">
       <button class="hd-btn" id="hdbtn-db" onclick="switchTab(1)">
-        <span class="hd-btn-icon">🗄️</span>
+        <span class="hd-btn-icon"><i data-lucide="database"></i></span>
         <span class="hd-btn-label">ฐานข้อมูล</span>
       </button>
       <button class="hd-btn active" id="hdbtn-settings" onclick="switchTab(0)">
-        <span class="hd-btn-icon">⚙️</span>
+        <span class="hd-btn-icon"><i data-lucide="settings"></i></span>
         <span class="hd-btn-label">ตั้งค่า</span>
       </button>
     </div>
@@ -282,25 +291,25 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- ═══ PANEL 0: SETTINGS ═══ -->
 <div class="panel active" id="p0">
   <div class="card">
-    <div class="sh"><span class="snum">⚙️</span><span class="stitle">ตั้งค่าร้านค้า</span><span class="sen">ปรับแต่งหน้าเว็บ</span></div>
+    <div class="sh"><span class="snum"><i data-lucide="settings"></i></span><span class="stitle">ตั้งค่าร้านค้า</span><span class="sen">ปรับแต่งหน้าเว็บ</span></div>
     <div class="settings-grid">
       <div>
         <div class="form-group">
-          <div class="form-label">🏪 ชื่อร้านค้า</div>
+          <div class="form-label with-icon"><i data-lucide="store" class="icon-sm"></i> ชื่อร้านค้า</div>
           <input type="text" id="inp_storeName" class="form-input" placeholder="เช่น MyPaws, PetShop One..." value="">
         </div>
         <div class="form-group">
-          <div class="form-label">📝 Tagline</div>
+          <div class="form-label with-icon"><i data-lucide="edit-3" class="icon-sm"></i> Tagline</div>
           <input type="text" id="inp_tagline" class="form-input" placeholder="Every Paws, Every Day." value="">
         </div>
         <div class="form-group">
-          <div class="form-label">📅 ช่วงข้อมูล (แสดงใน Header)</div>
+          <div class="form-label with-icon"><i data-lucide="calendar" class="icon-sm"></i> ช่วงข้อมูล (แสดงใน Header)</div>
           <input type="text" id="inp_dateRange" class="form-input" placeholder="เช่น ม.ค. 2568 – เม.ย. 2569" value="">
         </div>
       </div>
       <div>
         <div class="form-group">
-          <div class="form-label">🎨 สีหลัก (Primary Color)</div>
+          <div class="form-label with-icon"><i data-lucide="palette" class="icon-sm"></i> สีหลัก (Primary Color)</div>
           <div style="display:flex;gap:10px;align-items:center;">
             <input type="color" id="inp_color" value="#004EE6" style="width:56px;height:42px;padding:4px;cursor:pointer;border:2px solid var(--line);border-radius:8px;background:#fff;">
             <input type="text" id="inp_color_hex" class="form-input" value="#004EE6" style="width:110px;font-family:monospace;text-transform:uppercase;letter-spacing:1px;" placeholder="#000000" maxlength="7">
@@ -311,10 +320,10 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
           </div>
         </div>
         <div class="form-group">
-          <div class="form-label">🖼️ โลโก้ร้านค้า <span style="color:#aaa;font-weight:normal">(คลิกโลโก้ใน header หรืออัปโหลดที่นี่)</span></div>
+          <div class="form-label with-icon"><i data-lucide="image" class="icon-sm"></i> โลโก้ร้านค้า <span style="color:#aaa;font-weight:normal">(คลิกโลโก้ใน header หรืออัปโหลดที่นี่)</span></div>
           <div style="display:flex;gap:12px;align-items:center;">
             <div id="logoPreviewBox" class="logo-preview" onclick="document.getElementById('logoFileInput').click()" style="display:flex;flex-direction:column;gap:4px;">
-              <span style="font-size:24px">📷</span>
+              <i data-lucide="camera" class="icon-lg"></i>
               <span>คลิกเพื่ออัปโหลด</span>
             </div>
             <div>
@@ -326,13 +335,13 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-      <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
-      <span class="save-msg" id="saveMsg">✓ บันทึกแล้ว!</span>
+      <button class="btn btn-primary with-icon" onclick="saveSettings()"><i data-lucide="save" class="icon-sm"></i> บันทึกการตั้งค่า</button>
+      <span class="save-msg with-icon" id="saveMsg"><i data-lucide="check-circle" class="icon-sm"></i> บันทึกแล้ว!</span>
     </div>
   </div>
 
   <div class="card">
-    <div class="sh"><span class="snum">ℹ️</span><span class="stitle">เกี่ยวกับระบบ</span></div>
+    <div class="sh"><span class="snum"><i data-lucide="info"></i></span><span class="stitle">เกี่ยวกับระบบ</span></div>
     <div class="desc">
       <b>Loyalty Dashboard Pro</b> เป็น prototype ที่อ่านข้อมูลจาก Excel ไฟล์โดยตรงในเบราว์เซอร์ ไม่ต้องมี server<br><br>
       <b>ไฟล์ที่ต้องการ:</b> contacts (.xlsx) · Point Report List (.xlsx) · Redemptions Details (.xlsx) — export จาก Rocket Loyalty CRM<br><br>
@@ -345,11 +354,11 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- ═══ PANEL 1: DATABASE ═══ -->
 <div class="panel" id="p1">
   <div class="db-header">
-    <h2>🗄️ ฐานข้อมูล & อัปโหลดไฟล์</h2>
+    <h2 class="with-icon"><i data-lucide="database"></i> ฐานข้อมูล & อัปโหลดไฟล์</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-ok" onclick="recomputeAndRender()">🔄 คำนวณใหม่</button>
-      <button class="btn btn-primary" onclick="exportAsHTML()" style="background:#1a8f3c;border-color:#1a8f3c;">📄 Export HTML</button>
-      <button class="btn btn-danger" onclick="showClearModal()">🗑️ ล้างข้อมูลทั้งหมด</button>
+      <button class="btn btn-ok with-icon" onclick="recomputeAndRender()"><i data-lucide="refresh-cw" class="icon-sm"></i> คำนวณใหม่</button>
+      <button class="btn btn-primary with-icon" onclick="exportAsHTML()" style="background:#1a8f3c;border-color:#1a8f3c;"><i data-lucide="file-text" class="icon-sm"></i> Export HTML</button>
+      <button class="btn btn-danger with-icon" onclick="showClearModal()"><i data-lucide="trash-2" class="icon-sm"></i> ล้างข้อมูลทั้งหมด</button>
     </div>
   </div>
 
@@ -363,7 +372,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   <div class="upload-grid">
     <!-- Card 1: contacts -->
     <div class="upload-card" id="uc0">
-      <div class="uc-icon">👥</div>
+      <div class="uc-icon"><i data-lucide="users"></i></div>
       <div class="uc-title">1. Contacts File</div>
       <div class="uc-desc">ข้อมูลสมาชิก — ใช้คำนวณ New User Registration</div>
       <div class="uc-status" id="uc0_status"><span class="empty">ยังไม่มีข้อมูล</span></div>
@@ -371,14 +380,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
       <div style="margin-top:8px;">
         <div class="drop-zone" id="dz0" ondrop="dropFile(event,0)" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
           <input type="file" id="file0" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this,0)">
-          <div class="dz-icon">📂</div>
+          <div class="dz-icon"><i data-lucide="upload-cloud"></i></div>
           <p>ลาก-วาง หรือ <b>คลิกเลือกไฟล์</b><br><span style="color:#aaa">contacts-*.xlsx</span></p>
         </div>
         <div class="dz-actions">
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file0').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(0)">📥 Template .xlsx</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file0').click()"><i data-lucide="folder" class="icon-sm"></i> เลือกไฟล์</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(0)"><i data-lucide="download" class="icon-sm"></i> Template .xlsx</button>
         </div>
-        <div class="columns-badge" onclick="toggleColInfo(0)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
+        <div class="columns-badge" onclick="toggleColInfo(0)"><i data-lucide="list" class="icon-sm"></i> คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop0">
           <b style="font-size:11px;color:var(--brand);">contacts.xlsx — คอลัมน์ที่จำเป็น</b>
           <div class="col-list" style="margin-top:8px;">
@@ -392,7 +401,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
     <!-- Card 2: Point Report -->
     <div class="upload-card" id="uc1">
-      <div class="uc-icon">⭐</div>
+      <div class="uc-icon"><i data-lucide="star"></i></div>
       <div class="uc-title">2. Point Report List</div>
       <div class="uc-desc">ประวัติคะแนน — ใช้คำนวณ Sales, Points, Redemption (Used/Give)</div>
       <div class="uc-status" id="uc1_status"><span class="empty">ยังไม่มีข้อมูล</span></div>
@@ -400,14 +409,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
       <div style="margin-top:8px;">
         <div class="drop-zone" id="dz1" ondrop="dropFile(event,1)" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
           <input type="file" id="file1" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this,1)">
-          <div class="dz-icon">📂</div>
+          <div class="dz-icon"><i data-lucide="upload-cloud"></i></div>
           <p>ลาก-วาง หรือ <b>คลิกเลือกไฟล์</b><br><span style="color:#aaa">Point Report List - *.xlsx</span></p>
         </div>
         <div class="dz-actions">
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file1').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(1)">📥 Template .xlsx</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file1').click()"><i data-lucide="folder" class="icon-sm"></i> เลือกไฟล์</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(1)"><i data-lucide="download" class="icon-sm"></i> Template .xlsx</button>
         </div>
-        <div class="columns-badge" onclick="toggleColInfo(1)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
+        <div class="columns-badge" onclick="toggleColInfo(1)"><i data-lucide="list" class="icon-sm"></i> คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop1">
           <b style="font-size:11px;color:var(--brand);">Point Report List.xlsx — คอลัมน์ที่จำเป็น</b>
           <div class="col-list" style="margin-top:8px;">
@@ -424,7 +433,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
     <!-- Card 3: Redemptions -->
     <div class="upload-card" id="uc2">
-      <div class="uc-icon">🎁</div>
+      <div class="uc-icon"><i data-lucide="gift"></i></div>
       <div class="uc-title">3. Redemptions Details</div>
       <div class="uc-desc">รายละเอียดการแลกของรางวัล — ใช้คำนวณ Redemption Report</div>
       <div class="uc-status" id="uc2_status"><span class="empty">ยังไม่มีข้อมูล</span></div>
@@ -432,14 +441,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
       <div style="margin-top:8px;">
         <div class="drop-zone" id="dz2" ondrop="dropFile(event,2)" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
           <input type="file" id="file2" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this,2)">
-          <div class="dz-icon">📂</div>
+          <div class="dz-icon"><i data-lucide="upload-cloud"></i></div>
           <p>ลาก-วาง หรือ <b>คลิกเลือกไฟล์</b><br><span style="color:#aaa">Redemptions Details *.xlsx</span></p>
         </div>
         <div class="dz-actions">
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file2').click()">📁 เลือกไฟล์</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(2)">📥 Template .xlsx</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="document.getElementById('file2').click()"><i data-lucide="folder" class="icon-sm"></i> เลือกไฟล์</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" onclick="downloadTemplate(2)"><i data-lucide="download" class="icon-sm"></i> Template .xlsx</button>
         </div>
-        <div class="columns-badge" onclick="toggleColInfo(2)">📌 คอลัมน์ที่ต้องการ <span>▾</span></div>
+        <div class="columns-badge" onclick="toggleColInfo(2)"><i data-lucide="list" class="icon-sm"></i> คอลัมน์ที่ต้องการ <span>▾</span></div>
         <div class="col-popup" id="colpop2">
           <b style="font-size:11px;color:var(--brand);">Redemptions Details.xlsx — คอลัมน์ที่จำเป็น</b>
           <div class="col-list" style="margin-top:8px;">
@@ -455,18 +464,18 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 
   <!-- Google Apps Script Sync -->
   <div class="api-card">
-    <div class="sh" style="margin-bottom:14px;"><span class="snum">🔗</span><span class="stitle">Google Apps Script Sync</span><span class="sen">sync ข้อมูลอัตโนมัติจาก Google Sheets</span></div>
+    <div class="sh" style="margin-bottom:14px;"><span class="snum"><i data-lucide="link-2"></i></span><span class="stitle">Google Apps Script Sync</span><span class="sen">sync ข้อมูลอัตโนมัติจาก Google Sheets</span></div>
     <div class="desc">ถ้ามี Google Sheet ที่ sync กับ Rocket Loyalty แล้ว ให้ Deploy Apps Script เป็น Web App และวาง URL ด้านล่าง — กด Sync เพื่อดึงข้อมูลทั้งหมดในคลิกเดียว</div>
     <div class="api-url-row">
       <input type="text" id="apiUrlInput" class="form-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="font-size:12px;">
-      <button class="btn btn-secondary" onclick="saveApiUrl()">💾 บันทึก URL</button>
-      <button class="btn btn-primary" onclick="syncFromApi()">⚡ Sync Now</button>
+      <button class="btn btn-secondary" onclick="saveApiUrl()"><i data-lucide="save" class="icon-sm"></i> บันทึก URL</button>
+      <button class="btn btn-primary" onclick="syncFromApi()"><i data-lucide="zap" class="icon-sm"></i> Sync Now</button>
     </div>
     <div class="sync-log" id="syncLog"><span class="log-info">พร้อมสำหรับ sync — กรอก URL แล้วกด Sync Now</span></div>
 
     <!-- Apps Script template -->
     <details style="margin-top:14px;">
-      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--brand);padding:6px 0;">📜 ดู Google Apps Script Template v2 — รองรับ CRUD (คัดลอกไปใช้ได้เลย)</summary>
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--brand);padding:6px 0;"><i data-lucide="scroll-text" class="icon-sm"></i> ดู Google Apps Script Template v2 — รองรับ CRUD (คัดลอกไปใช้ได้เลย)</summary>
       <div class="script-box" id="gasTemplate">
 <span class="c-comment">// ════ Google Apps Script — Loyalty Dashboard v2 (Read + Write) ════</span>
 <span class="c-comment">// 1. เปิด Google Sheet → Extensions → Apps Script</span>
@@ -521,27 +530,27 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   <span class="c-key">return</span> ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
       </div>
-      <button class="copy-btn" onclick="copyGasCode()" style="margin-top:-30px;position:relative;z-index:1;">📋 คัดลอก</button>
+      <button class="copy-btn" onclick="copyGasCode()" style="margin-top:-30px;position:relative;z-index:1;"><i data-lucide="clipboard" class="icon-sm"></i> คัดลอก</button>
     </details>
   </div>
 
   <!-- CRUD: Write to Google Sheets -->
   <div class="crud-card" id="crudSection" style="display:none;">
-    <div class="sh" style="margin-bottom:14px;"><span class="snum">✏️</span><span class="stitle">เพิ่ม / ลบข้อมูลใน Sheets</span><span class="sen">เขียนตรงจาก Dashboard</span></div>
+    <div class="sh" style="margin-bottom:14px;"><span class="snum"><i data-lucide="pencil"></i></span><span class="stitle">เพิ่ม / ลบข้อมูลใน Sheets</span><span class="sen">เขียนตรงจาก Dashboard</span></div>
     <div class="desc">เพิ่มข้อมูลใหม่เข้า Google Sheets โดยตรง — ข้อมูลจะปรากฏใน Sheet ทันที แล้ว Dashboard จะ Sync อัตโนมัติ<br>ต้อง Deploy Apps Script Template v2 ข้างต้นก่อน</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="btn btn-primary" onclick="openAddModal('contact')">👤 เพิ่มสมาชิก</button>
-      <button class="btn btn-primary" onclick="openAddModal('point')">⭐ เพิ่ม Transaction</button>
-      <button class="btn btn-primary" onclick="openAddModal('redemption')">🎁 เพิ่มการแลก</button>
+      <button class="btn btn-primary" onclick="openAddModal('contact')"><i data-lucide="user-plus" class="icon-sm"></i> เพิ่มสมาชิก</button>
+      <button class="btn btn-primary" onclick="openAddModal('point')"><i data-lucide="plus-circle" class="icon-sm"></i> เพิ่ม Transaction</button>
+      <button class="btn btn-primary" onclick="openAddModal('redemption')"><i data-lucide="plus-circle" class="icon-sm"></i> เพิ่มการแลก</button>
     </div>
     <div class="crud-log" id="crudLog" style="display:none;"></div>
   </div>
 
   <!-- Clear Data -->
   <div class="clear-card">
-    <h3>⚠️ ล้างข้อมูลทั้งหมด</h3>
+    <h3 class="with-icon"><i data-lucide="alert-triangle"></i> ล้างข้อมูลทั้งหมด</h3>
     <p>ลบข้อมูลทั้งหมดที่อัปโหลดไว้ — เหมาะสำหรับเปลี่ยนร้านค้าใหม่ หรือเริ่มต้นใหม่<br>การตั้งค่าร้านค้า (ชื่อ สี โลโก้) จะ<b>ไม่ถูกลบ</b> ต้องล้างแยกในหน้าตั้งค่า</p>
-    <button class="btn btn-danger" onclick="showClearModal()">🗑️ ล้างข้อมูล Excel ทั้งหมด</button>
+    <button class="btn btn-danger" onclick="showClearModal()"><i data-lucide="trash-2" class="icon-sm"></i> ล้างข้อมูล Excel ทั้งหมด</button>
   </div>
 </div>
 
@@ -551,9 +560,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   <div class="sh"><span class="snum">1</span><span class="stitle">New User Registration</span><span class="sen">ผู้ใช้รายใหม่ (ACTIVE)</span></div>
   <div class="desc">จำนวนผู้ใช้ใหม่สถานะ <b>ACTIVE</b> จัดกลุ่มตาม Register Date — ไม่รวมเดือนปัจจุบันที่ข้อมูลยังไม่ครบ</div>
   <div id="p2_empty" class="empty-state">
-    <div class="es-icon">👥</div>
+    <div class="es-icon"><i data-lucide="users"></i></div>
     <h3>ยังไม่มีข้อมูล Contacts</h3>
-    <p>กรุณาอัปโหลดไฟล์ contacts.xlsx<br>ในแท็บ 🗄️ ฐานข้อมูล</p>
+    <p>กรุณาอัปโหลดไฟล์ contacts.xlsx<br>ในแท็บฐานข้อมูล</p>
     <button class="btn btn-primary" onclick="switchTab(1)">ไปที่ Database →</button>
   </div>
   <div id="p2_content" style="display:none">
@@ -572,9 +581,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   <div class="sh"><span class="snum">2</span><span class="stitle">Sales Report</span><span class="sen">ยอดขาย (THB) แยกตามช่องทาง</span></div>
   <div class="desc">ยอดขาย (บาท) จาก Point Report เฉพาะ Point type = <b>GIVEN</b> · Source = Third Party (แยก Channel) + Loyalty Manual + Upload Receipt</div>
   <div id="p3_empty" class="empty-state">
-    <div class="es-icon">💰</div>
+    <div class="es-icon"><i data-lucide="circle-dollar-sign"></i></div>
     <h3>ยังไม่มีข้อมูล Point Report</h3>
-    <p>กรุณาอัปโหลดไฟล์ Point Report List.xlsx<br>ในแท็บ 🗄️ ฐานข้อมูล</p>
+    <p>กรุณาอัปโหลดไฟล์ Point Report List.xlsx<br>ในแท็บฐานข้อมูล</p>
     <button class="btn btn-primary" onclick="switchTab(1)">ไปที่ Database →</button>
   </div>
   <div id="p3_content" style="display:none">
@@ -590,9 +599,9 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <div class="card">
   <div class="sh"><span class="snum">3</span><span class="stitle">Points Report</span><span class="sen">คะแนนสะสม (GIVEN)</span></div>
   <div id="p4_empty" class="empty-state">
-    <div class="es-icon">⭐</div>
+    <div class="es-icon"><i data-lucide="star"></i></div>
     <h3>ยังไม่มีข้อมูล Point Report</h3>
-    <p>กรุณาอัปโหลดไฟล์ Point Report List.xlsx<br>ในแท็บ 🗄️ ฐานข้อมูล</p>
+    <p>กรุณาอัปโหลดไฟล์ Point Report List.xlsx<br>ในแท็บฐานข้อมูล</p>
     <button class="btn btn-primary" onclick="switchTab(1)">ไปที่ Database →</button>
   </div>
   <div id="p4_content" style="display:none">
@@ -616,7 +625,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   <div class="sh"><span class="snum">4</span><span class="stitle">Redemption Report</span><span class="sen">การแลกของรางวัล</span></div>
   <div class="desc">จำนวนการแลกของรางวัล + เปรียบเทียบ Give Points กับ Used Points + Cross-check</div>
   <div id="p5_empty" class="empty-state">
-    <div class="es-icon">🎁</div>
+    <div class="es-icon"><i data-lucide="gift"></i></div>
     <h3>ยังไม่มีข้อมูล</h3>
     <p>ต้องการทั้ง Point Report List.xlsx<br>และ Redemptions Details.xlsx</p>
     <button class="btn btn-primary" onclick="switchTab(1)">ไปที่ Database →</button>
@@ -639,7 +648,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- ADD CONTACT MODAL -->
 <div class="modal-overlay" id="addContactModal">
   <div class="modal" style="max-width:500px;">
-    <h2>👤 เพิ่มสมาชิกใหม่</h2>
+    <h2 class="with-icon"><i data-lucide="user-plus"></i> เพิ่มสมาชิกใหม่</h2>
     <div class="form-group"><div class="form-label">ชื่อสมาชิก</div><input type="text" class="form-input" id="ci_name" placeholder="ชื่อ-นามสกุล"></div>
     <div class="form-group"><div class="form-label">Status</div>
       <select class="form-input" id="ci_status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></div>
@@ -651,7 +660,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div class="form-group"><div class="form-label">Points balance</div><input type="number" class="form-input" id="ci_pts" value="0"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAddModal('contact')">ยกเลิก</button>
-      <button class="btn btn-primary" id="submitContactBtn" onclick="submitAdd('contact')">💾 บันทึกลง Sheets</button>
+      <button class="btn btn-primary" id="submitContactBtn" onclick="submitAdd('contact')"><i data-lucide="save" class="icon-sm"></i> บันทึกลง Sheets</button>
     </div>
   </div>
 </div>
@@ -659,7 +668,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- ADD POINT TRANSACTION MODAL -->
 <div class="modal-overlay" id="addPointModal">
   <div class="modal" style="max-width:500px;">
-    <h2>⭐ เพิ่ม Point Transaction</h2>
+    <h2 class="with-icon"><i data-lucide="star"></i> เพิ่ม Point Transaction</h2>
     <div class="form-group"><div class="form-label">Date &amp; time</div><input type="datetime-local" class="form-input" id="pi_dt"></div>
     <div class="form-group"><div class="form-label">Member name</div><input type="text" class="form-input" id="pi_name" placeholder="ชื่อสมาชิก"></div>
     <div class="form-group"><div class="form-label">Member tel</div><input type="text" class="form-input" id="pi_tel" placeholder="0812345678"></div>
@@ -683,7 +692,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div class="form-group"><div class="form-label">Sub channel <span style="font-weight:400;color:#aaa;">(optional)</span></div><input type="text" class="form-input" id="pi_subchannel" placeholder="ช่องทางย่อย"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAddModal('point')">ยกเลิก</button>
-      <button class="btn btn-primary" id="submitPointBtn" onclick="submitAdd('point')">💾 บันทึกลง Sheets</button>
+      <button class="btn btn-primary" id="submitPointBtn" onclick="submitAdd('point')"><i data-lucide="save" class="icon-sm"></i> บันทึกลง Sheets</button>
     </div>
   </div>
 </div>
@@ -691,7 +700,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- ADD REDEMPTION MODAL -->
 <div class="modal-overlay" id="addRedemptionModal">
   <div class="modal" style="max-width:500px;">
-    <h2>🎁 เพิ่มการแลกของรางวัล</h2>
+    <h2 class="with-icon"><i data-lucide="gift"></i> เพิ่มการแลกของรางวัล</h2>
     <div class="form-group"><div class="form-label">Date &amp; time</div><input type="datetime-local" class="form-input" id="ri_dt"></div>
     <div class="form-group"><div class="form-label">Reward name</div><input type="text" class="form-input" id="ri_reward" placeholder="ชื่อของรางวัล"></div>
     <div class="form-group"><div class="form-label">Reward code <span style="font-weight:400;color:#aaa;">(optional)</span></div><input type="text" class="form-input" id="ri_code" placeholder="รหัสของรางวัล"></div>
@@ -700,7 +709,7 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
     <div class="form-group"><div class="form-label">Member tel</div><input type="text" class="form-input" id="ri_tel" placeholder="0812345678"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeAddModal('redemption')">ยกเลิก</button>
-      <button class="btn btn-primary" id="submitRedemptionBtn" onclick="submitAdd('redemption')">💾 บันทึกลง Sheets</button>
+      <button class="btn btn-primary" id="submitRedemptionBtn" onclick="submitAdd('redemption')"><i data-lucide="save" class="icon-sm"></i> บันทึกลง Sheets</button>
     </div>
   </div>
 </div>
@@ -708,14 +717,14 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
 <!-- CLEAR MODAL -->
 <div class="modal-overlay" id="clearModal">
   <div class="modal">
-    <h2>⚠️ ยืนยันล้างข้อมูล</h2>
+    <h2 class="with-icon"><i data-lucide="alert-triangle"></i> ยืนยันล้างข้อมูล</h2>
     <p style="font-size:13px;line-height:1.8;color:#555;">จะล้างข้อมูลทั้งหมดออกจากเบราว์เซอร์:<br>
-    ✗ ข้อมูล Contacts · Point Report · Redemptions<br>✗ ข้อมูล Dashboard ที่คำนวณไว้<br><br>
-    ✅ <b>การตั้งค่า (ชื่อ/สี/โลโก้) จะยังอยู่</b><br>
-    ✅ <b>Google Sheet ไม่ถูกลบ</b> — กด Sync อีกครั้งเพื่อโหลดข้อมูลกลับมา</p>
+    <span style="color:#C8102E;">✕</span> ข้อมูล Contacts · Point Report · Redemptions<br><span style="color:#C8102E;">✕</span> ข้อมูล Dashboard ที่คำนวณไว้<br><br>
+    <span style="color:#1a8f3c;">✓</span> <b>การตั้งค่า (ชื่อ/สี/โลโก้) จะยังอยู่</b><br>
+    <span style="color:#1a8f3c;">✓</span> <b>Google Sheet ไม่ถูกลบ</b> — กด Sync อีกครั้งเพื่อโหลดข้อมูลกลับมา</p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="hideClearModal()">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="clearAllData()">🗑️ ยืนยันล้างข้อมูล</button>
+      <button class="btn btn-danger" onclick="clearAllData()"><i data-lucide="trash-2" class="icon-sm"></i> ยืนยันล้างข้อมูล</button>
     </div>
   </div>
 </div>

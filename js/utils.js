@@ -85,6 +85,15 @@ function toLocalISODateTime(d){
   return `${toLocalISODate(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
+// ── Lucide icon system ──
+// After injecting HTML containing <i data-lucide="icon-name">, call this to convert
+// those <i> placeholders into actual SVG icons. Safe to call before lucide loads.
+function refreshIcons(){
+  if(typeof lucide!=='undefined'&&typeof lucide.createIcons==='function'){
+    try{lucide.createIcons();}catch(e){}
+  }
+}
+
 // ── Display formatting ──
 const fmt=n=>{if(!n&&n!==0)return'–';return Math.round(n).toLocaleString('en-US');};
 function pchCell(v){

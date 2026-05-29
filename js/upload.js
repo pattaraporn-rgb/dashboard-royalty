@@ -15,7 +15,7 @@ function handleFileSelect(input, slot){
 
 function processFile(file, slot){
   const status = document.getElementById('uc'+slot+'_status');
-  status.innerHTML = '<span style="color:#f39c12">⏳ กำลังอ่านไฟล์...</span>';
+  status.innerHTML = '<span style="color:#f39c12">กำลังอ่านไฟล์…</span>';
   const reader = new FileReader();
   reader.onload = e=>{
     try{
@@ -23,7 +23,7 @@ function processFile(file, slot){
       const wb = XLSX.read(data, {type:'array', cellDates:true});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, {defval:'', raw:false, dateNF:'yyyy-mm-dd'});
-      if(rows.length===0){ status.innerHTML='<span style="color:red">❌ ไฟล์ว่างเปล่า</span>'; return; }
+      if(rows.length===0){ status.innerHTML='<span style="color:red">ไฟล์ว่างเปล่า</span>'; return; }
 
       const fi = {name:file.name, rows:rows.length, uploadDate:new Date().toLocaleString('th-TH'), slot};
       fileInfo[slot] = fi;
@@ -46,7 +46,7 @@ function processFile(file, slot){
       updateFileCard(slot, fi);
       recomputeAndRender();
     }catch(err){
-      status.innerHTML=`<span style="color:red">❌ อ่านไฟล์ไม่ได้: ${err.message}</span>`;
+      status.innerHTML=`<span style="color:red">อ่านไฟล์ไม่ได้: ${err.message}</span>`;
       console.error(err);
     }
   };

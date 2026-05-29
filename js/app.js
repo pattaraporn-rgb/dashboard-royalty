@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   updateDbSummary();
   updateCrudSection();
   document.getElementById('footerYear').textContent = new Date().getFullYear();
+  refreshIcons();
   // Auto-sync from Supabase on load
-  addLog('info','🔄 Auto-sync จาก Supabase...');
+  addLog('info','เริ่ม Auto-sync จาก Supabase…');
   syncFromApi();
 });
 
@@ -27,6 +28,7 @@ function switchTab(n){
   if(sBtn) sBtn.classList.toggle('active',n===0);
   if(dBtn) dBtn.classList.toggle('active',n===1);
   if(!rendered[n]){ renders[n](); rendered[n]=true; }
+  refreshIcons();
 }
 
 // Tab indices: 0=Settings, 1=Database, 2=สมาชิก, 3=Sales, 4=Points, 5=Redemption
