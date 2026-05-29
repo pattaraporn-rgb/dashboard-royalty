@@ -163,8 +163,8 @@ function exportInactiveMembers(type){
   const ia=inactiveData; if(!ia){alert('⚠️ ไม่พบข้อมูล กรุณาอัปโหลดไฟล์ Contacts ใหม่อีกครั้ง');return;}
   const members=type==='blank'?ia.blank:ia.overdue;
   if(!members.length) return;
-  const headers=['ชื่อ','เบอร์โทร','วันสมัคร','Last Activity Date','Status'];
-  const csvRows=[headers,...members.map(m=>[m.name||'',m.phone||'',m.regDate||'',m.lastActivityDate||'',m.status||''])];
+  const headers=['ชื่อ','เบอร์โทร','Line User ID','วันสมัคร','Last Activity Date','Status'];
+  const csvRows=[headers,...members.map(m=>[m.name||'',m.phone||'',m.lineUserId||'',m.regDate||'',m.lastActivityDate||'',m.status||''])];
   const csv=csvRows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
