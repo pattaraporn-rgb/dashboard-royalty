@@ -1197,6 +1197,9 @@ function parseDate(val){
   // YYYY-MM-DD... (handles Buddhist Era)
   const m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(m2){const y=+m2[1]>2499?+m2[1]-543:+m2[1];return new Date(y,+m2[2]-1,+m2[3]);}
+  // YYYY/MM/DD (Thai format with slashes, handles Buddhist Era e.g. "2566/01/15")
+  const m3=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if(m3){const y=+m3[1]>2499?+m3[1]-543:+m3[1];return new Date(y,+m3[2]-1,+m3[3]);}
   const d=new Date(s);
   return isNaN(d)?null:d;
 }
