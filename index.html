@@ -2065,12 +2065,19 @@ const SUPA_COLS={
   redemptions:['Date & time','Reward name','Reward code','Points used','Member name','Member tel']
 };
 
+const SUPA_DATE_COLS=new Set(['Register Date','Last Activity Date','Last Login','Date & time']);
+function supaDateStr(v){
+  const d=parseDate(v);
+  if(!d) return v;
+  return d.toISOString().slice(0,10); // "YYYY-MM-DD" — safe for Supabase text column
+}
+
 async function backupToSheet(slot, rows){
   const TABLE_NAMES=['contacts','point_report','redemptions'];
   const table=TABLE_NAMES[slot];
   const cols=SUPA_COLS[table];
-  // Keep only columns defined in Supabase schema (strips empty-header cols + unknown cols)
-  const clean=rows.map(r=>{const o={};cols.forEach(c=>{if(r[c]!==undefined&&r[c]!==null)o[c]=r[c];});return o;});
+  // Keep only schema columns; convert Excel serial dates → "YYYY-MM-DD" strings
+  const clean=rows.map(r=>{const o={};cols.forEach(c=>{if(r[c]!==undefined&&r[c]!==null)o[c]=SUPA_DATE_COLS.has(c)?supaDateStr(r[c]):r[c];});return o;});
   addLog('info',`⏳ Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
   try{
     await fetch(`${SUPA.url}/${table}?id=gte.0`,{method:'DELETE',headers:SUPA.h});
