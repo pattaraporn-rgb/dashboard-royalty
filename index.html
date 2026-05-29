@@ -1365,17 +1365,13 @@ function recomputeAndRender(){
 
 function loadStoredData(){
   try{
-    const stored=localStorage.getItem('ld_computed');
-    if(stored) D=JSON.parse(stored);
     const fi0=JSON.parse(localStorage.getItem('ld_contacts')||'null');
     const fi1=JSON.parse(localStorage.getItem('ld_point')||'null');
     const fi2=JSON.parse(localStorage.getItem('ld_redemp')||'null');
     if(fi0) fileInfo[0]=fi0.fi||{};
     if(fi1) fileInfo[1]=fi1.fi||{};
     if(fi2) fileInfo[2]=fi2.fi||{};
-    updateKpis();
-    updateFileCards();
-    updateDateLabel();
+    recomputeAndRender(); // always compute from raw stores — never read stale ld_computed
   }catch(e){console.error('loadStoredData',e);}
 }
 
