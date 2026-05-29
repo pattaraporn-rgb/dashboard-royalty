@@ -1186,6 +1186,11 @@ function parseDate(val){
   }
   const s=String(val).trim();
   if(!s) return null;
+  // Numeric string = Excel serial stored as text in Supabase (e.g. "44927" or "44927.5")
+  if(/^\d+(\.\d+)?$/.test(s)&&+s>20000){
+    const d=new Date(Math.round((parseFloat(s)-25569)*86400*1000));
+    return isNaN(d)?null:d;
+  }
   // DD/MM/YYYY HH:MM or DD/MM/YYYY (handles Buddhist Era: year>2499 → subtract 543)
   const m1=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m1){const y=+m1[3]>2499?+m1[3]-543:+m1[3];return new Date(y,+m1[2]-1,+m1[1]);}
