@@ -2060,12 +2060,17 @@ function jsonOut(data) {
 
 // ── Backup raw rows to Google Sheet after every Excel upload ──
 const SUPA_COLS={
-  contacts:['Name','Status','Register Date','Last Activity Date','Last Login','Phone No','Gender','Tier','Points balance'],
+  contacts:['Name','Status','Register Date','Last Activity Date','Last Login','Phone No','Gender','Tier','Points balance','Line User ID'],
   point_report:['Date & time','Member name','Member tel','Point type','Points collected','Sale amount (THB)','Source','Channel','Sub channel'],
   redemptions:['Date & time','Reward name','Reward code','Points used','Member name','Member tel']
 };
 
 const SUPA_DATE_COLS=new Set(['Register Date','Last Activity Date','Last Login','Date & time']);
+// Excel column names may differ from Supabase column names — list alternatives here
+const SUPA_ALIASES={
+  'Phone No':    ['phone no','tel','telephone','phone','mobile'],
+  'Line User ID':['line user id','line user','lineuserid','line id'],
+};
 function supaDateStr(v){
   const d=parseDate(v);
   if(!d) return v;
@@ -2077,7 +2082,7 @@ async function backupToSheet(slot, rows){
   const table=TABLE_NAMES[slot];
   const cols=SUPA_COLS[table];
   // Keep only schema columns; all rows must have identical keys (PGRST102 requires uniform keys in batch insert)
-  const clean=rows.map(r=>{const o={};cols.forEach(c=>{const v=findVal(r,[c]);o[c]=(v!==''&&v!=null)?(SUPA_DATE_COLS.has(c)?supaDateStr(v):v):null;});return o;});
+  const clean=rows.map(r=>{const o={};cols.forEach(c=>{const keys=SUPA_ALIASES[c]||[c];const v=findVal(r,keys);o[c]=(v!==''&&v!=null)?(SUPA_DATE_COLS.has(c)?supaDateStr(v):v):null;});return o;});
   addLog('info',`⏳ Backup ${clean.length.toLocaleString()} แถว → Supabase "${table}"...`);
   try{
     await fetch(`${SUPA.url}/${table}?id=gte.0`,{method:'DELETE',headers:SUPA.h});
