@@ -127,11 +127,16 @@ function renderP2(){
         datalabels:{display:ctx=>ctx.dataset.type==='bar',
           labels:{
             value:{anchor:'end',align:'top',color:'#1A1A1A',font:{weight:'bold',size:11},formatter:v=>fmt(v)},
-            percent:{anchor:'center',align:'center',
+            percent:{
+              // Smart position: center inside bar when tall enough, otherwise above bar
+              anchor:ctx=>{const v=ctx.dataset.data[ctx.dataIndex],yMax=ctx.chart.scales.y.max||1,barH=(v/yMax)*ctx.chart.chartArea.height;return barH<28?'end':'center';},
+              align:ctx=>{const v=ctx.dataset.data[ctx.dataIndex],yMax=ctx.chart.scales.y.max||1,barH=(v/yMax)*ctx.chart.chartArea.height;return barH<28?'top':'center';},
+              offset:ctx=>{const v=ctx.dataset.data[ctx.dataIndex],yMax=ctx.chart.scales.y.max||1,barH=(v/yMax)*ctx.chart.chartArea.height;return barH<28?20:0;},
               color:'#fff',borderRadius:10,padding:{top:3,bottom:3,left:7,right:7},
               font:{weight:'bold',size:10},
               backgroundColor:ctx=>{const p=s.pch[ctx.dataIndex];if(p==null)return null;return p>0.0005?'#1a8f3c':p<-0.0005?'#C8102E':'#888';},
-              display:ctx=>{const p=s.pch[ctx.dataIndex];return p!=null;},
+              // Bug fix: include dataset type check so pill renders only on bars, not line points
+              display:ctx=>ctx.dataset.type==='bar'&&s.pch[ctx.dataIndex]!=null,
               formatter:(_,ctx)=>{const p=s.pch[ctx.dataIndex];if(p==null)return'';const pct=(p*100).toFixed(1);return(p>0?'+':'')+pct+'%';}
             }
           }
