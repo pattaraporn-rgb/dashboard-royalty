@@ -224,7 +224,7 @@ function exportAsHTML(){
   <div class="sh"><span class="snum">2</span><span class="stitle">Sales Report</span><span class="sen">ยอดขาย (THB) แยกตามช่องทาง</span></div>
   <div class="desc">ยอดขาย (บาท) จาก Point Report เฉพาะ Point type = <b>GIVEN</b></div>
   <div id="p3_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="circle-dollar-sign"></i></div><h3>ไม่มีข้อมูล</h3></div>
-  <div id="p3_content" style="display:none"><div class="stat-row" id="kpi3"></div><div class="chart-hint"><i data-lucide="info"></i> คลิกชื่อช่องทาง = โฟกัสเฉพาะอันนั้น • Shift+คลิก = เพิ่ม/ลบหลายอัน (เทียบกัน) • คลิกซ้ำที่อันเดิม = แสดงทั้งหมด</div><div class="chartbox scroll"><div class="chart-scroll-inner"><canvas id="c3"></canvas></div></div><div class="tbl-wrap"><div id="t3"></div></div></div>
+  <div id="p3_content" style="display:none"><div class="stat-row" id="kpi3"></div><div class="chart-hint"><i data-lucide="info"></i> คลิกชื่อช่องทาง = โฟกัสเฉพาะอันนั้น • ⌘+คลิก (Mac) หรือ Ctrl+คลิก (Windows) = เพิ่ม/ลบหลายอัน (เทียบกัน) • คลิกซ้ำที่อันเดิม = แสดงทั้งหมด</div><div class="chartbox scroll"><div class="chart-scroll-inner"><canvas id="c3"></canvas></div></div><div class="tbl-wrap"><div id="t3"></div></div></div>
 </div></div>
 <!-- PANEL 3: POINTS -->
 <div class="panel" id="p4">
