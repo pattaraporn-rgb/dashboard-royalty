@@ -525,7 +525,7 @@ function renderP5(){
 
   // ตารางหลัก เรียงจากเก่าไปใหม่ (ascending)
   // คอลัมน์ %Ch ของจำนวนที่แลกถูกตัดออก — โฟกัสที่ตัวเลขแลกต่อเดือน ไม่ใช่ % เปลี่ยนแปลง
-  let r5=`<table><tr><th>เดือน</th>${thC('Give Points','#3A4DA0')}${thC('Used Points','#7B1E26')}<th>%Ch</th>${thC('จำนวนที่แลก','#1A1A1A')}${thC('Used/Give %','#004EE6')}</tr>`;
+  let r5=`<table><tr><th>เดือน</th>${thC('Give Points','#3A4DA0')}${thC('Used Points','#7B1E26')}<th>%Ch (Used)</th>${thC('จำนวนที่แลก','#1A1A1A')}${thC('Used/Give %','#004EE6')}</tr>`;
   s.months.forEach((m,i)=>{
     const gv=s5GivePts[i]||0,us=s.pts_point[i]||0;
     const prevUs=i>0?s.pts_point[i-1]:null;
