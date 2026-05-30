@@ -51,7 +51,7 @@ function exportAsHTML(){
   let css=(styleEl?styleEl.textContent:'').replace(/:root\{[\s\S]*?\}/,
     `:root{--brand:${brand};--brand-dark:${brandDk};--brand-light:${brandLt};--ink:#1A1A1A;--bg:#f0f0f3;--card:#fff;--mut:#8a8a93;--line:#e6e6ea;--ok:#1a8f3c;--warn:#f39c12;--err:#C8102E;}`);
   css+=`\n.hd-actions{display:none!important;}
-.export-banner{background:${brandLt};border-left:4px solid ${brand};padding:10px 28px;font-size:12px;color:${brandDk};font-weight:600;letter-spacing:.2px;}
+.export-banner{background:#0A0A1A;border-top:1px solid #222;padding:12px 28px;font-size:12px;color:#888;font-weight:600;letter-spacing:.2px;text-align:center;justify-content:center;}
 .export-banner span{opacity:.7;font-weight:400;}`;
 
   // KPIs for header
