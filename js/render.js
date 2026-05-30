@@ -469,27 +469,43 @@ function renderP5(){
   const totalGive=s5GivePts.reduce((a,b)=>a+b,0);
   const totalUsed=s.pts_point.reduce((a,b)=>a+b,0);
   const lab=s.months.map(m=>ML[m]||m);
+  // Chart 1 — Redemption count: bar (volume) + trend line overlay + bold value
+  // labels on each bar. The line makes month-to-month movement obvious; the
+  // labels give the exact count without a tooltip.
   mkChart('c5a',{type:'bar',
-    data:{labels:lab,datasets:[{label:'จำนวนที่แลก (ครั้ง)',data:s.count,backgroundColor:'#7B1E26',borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+    data:{labels:lab,datasets:[
+      {type:'bar',label:'จำนวนที่แลก (ครั้ง)',data:s.count,backgroundColor:'#7B1E26',borderRadius:4,order:2},
+      {type:'line',label:'แนวโน้ม',data:s.count,borderColor:'#C8102E',backgroundColor:'#C8102E',
+        borderWidth:2.5,tension:0.3,fill:false,pointRadius:3.5,pointHoverRadius:6,
+        pointBackgroundColor:'#fff',pointBorderColor:'#C8102E',pointBorderWidth:2,order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30}},
       plugins:{
         legend:{display:false},
-        title:{display:true,text:'จำนวนการแลกของรางวัล',font:{size:12,weight:'bold'},padding:{bottom:10}},
-        datalabels:valueLabel(),
-        tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)} ครั้ง`}}
+        title:{display:true,text:'จำนวนการแลกของรางวัล (ครั้ง)',font:{size:14,weight:'bold'},padding:{bottom:12}},
+        datalabels:{display:ctx=>ctx.dataset.type==='bar',anchor:'end',align:'top',
+          color:'#1A1A1A',font:{weight:'bold',size:11},formatter:v=>v>0?fmt(v):''},
+        tooltip:{filter:i=>i.datasetIndex===0,callbacks:{label:c=>` ${fmt(c.parsed.y)} ครั้ง`}}
       },
       scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
     }
   });
+  // Chart 2 — Give vs Used points: grouped bars with a value label above each
+  // bar so the two series can be compared per month at a glance. display:'auto'
+  // hides labels that would collide; a white pill keeps them readable over bars.
   mkChart('c5b',{type:'bar',
     data:{labels:lab,datasets:[
       {label:'Give Points (แจก-ทุกแหล่ง)',data:s5GivePts,backgroundColor:'#3A4DA0',borderRadius:3},
       {label:'Used Points (REDEEMED)',data:s.pts_point,backgroundColor:'#7B1E26',borderRadius:3}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30}},
       plugins:{
         legend:{position:'top',align:'end',onClick:focusLegendClick},
-        title:{display:true,text:'Give Points เทียบ Used Points',font:{size:12,weight:'bold'},padding:{bottom:10}},
+        title:{display:true,text:'Give Points เทียบ Used Points (แต้ม)',font:{size:14,weight:'bold'},padding:{bottom:12}},
+        datalabels:{display:'auto',anchor:'end',align:'top',offset:2,
+          color:ctx=>ctx.dataset.backgroundColor,font:{weight:'bold',size:9},
+          backgroundColor:'rgba(255,255,255,0.85)',borderRadius:4,padding:{top:1,bottom:1,left:4,right:4},
+          formatter:v=>v>0?fmt(v):''},
         tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)} แต้ม`}}
       },
       scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
@@ -508,23 +524,29 @@ function renderP5(){
   document.getElementById('kpi5').innerHTML=heroP5+subP5;
 
   // ตารางหลัก เรียงจากเก่าไปใหม่ (ascending)
-  let r5=`<table><tr><th>เดือน</th>${thC('Give Points','#3A4DA0')}${thC('Used Points','#7B1E26')}<th>%Ch</th>${thC('จำนวนที่แลก','#1A1A1A')}<th>%Ch</th>${thC('Used/Give %','#004EE6')}</tr>`;
+  // คอลัมน์ %Ch ของจำนวนที่แลกถูกตัดออก — โฟกัสที่ตัวเลขแลกต่อเดือน ไม่ใช่ % เปลี่ยนแปลง
+  let r5=`<table><tr><th>เดือน</th>${thC('Give Points','#3A4DA0')}${thC('Used Points','#7B1E26')}<th>%Ch</th>${thC('จำนวนที่แลก','#1A1A1A')}${thC('Used/Give %','#004EE6')}</tr>`;
   s.months.forEach((m,i)=>{
     const gv=s5GivePts[i]||0,us=s.pts_point[i]||0;
     const prevUs=i>0?s.pts_point[i-1]:null;
-    r5+=`<tr><td>${ML[m]||m}</td><td>${fmt(gv)}</td><td>${fmt(us)}</td>${pchCell(prevUs!==null&&prevUs!==0?(us-prevUs)/prevUs:null)}<td>${fmt(s.count[i])}</td>${pchCell(s.count_pch[i])}<td>${gv>0?(us/gv*100).toFixed(1)+'%':'–'}</td></tr>`;
+    r5+=`<tr><td>${ML[m]||m}</td><td>${fmt(gv)}</td><td>${fmt(us)}</td>${pchCell(prevUs!==null&&prevUs!==0?(us-prevUs)/prevUs:null)}<td>${fmt(s.count[i])}</td><td>${gv>0?(us/gv*100).toFixed(1)+'%':'–'}</td></tr>`;
   });
-  r5+=`<tr class="tot"><td>รวม</td><td>${fmt(totalGive)}</td><td>${fmt(totalUsed)}</td><td>–</td><td>${fmt(s.total_count)}</td><td>–</td><td>${totalGive>0?(totalUsed/totalGive*100).toFixed(1)+'%':'–'}</td></tr></table>`;
+  r5+=`<tr class="tot"><td>รวม</td><td>${fmt(totalGive)}</td><td>${fmt(totalUsed)}</td><td>–</td><td>${fmt(s.total_count)}</td><td>${totalGive>0?(totalUsed/totalGive*100).toFixed(1)+'%':'–'}</td></tr></table>`;
   document.getElementById('t5').innerHTML=r5;
 
   // Pivot ของรางวัล: monthly ≤15 เดือน, quarterly >15 เดือน
   const pv=buildRewardPivot(s);
   const modeEl=document.getElementById('pivotModeLabel');
   if(modeEl) modeEl.textContent=pv.isQuarterly?'(รายไตรมาส — ข้อมูลมากกว่า 15 เดือน)':'(รายเดือน)';
-  let r5r=`<table class="tname"><tr><th style="text-align:left">ของรางวัล</th>${pv.cols.map((c,i)=>'<th>'+pv.colLabels[i]+'</th>').join('')}<th>รวม</th></tr>`;
-  pv.rdList.forEach(([n,data])=>{
+  // rdList มาเรียงจากมากไปน้อยอยู่แล้ว → 5 แถวแรกคือ Top 5
+  // ใส่เหรียญอันดับ + ไฮไลต์ให้เด่น ส่วนอันดับ 6 เป็นต้นไปแสดงปกติ
+  let r5r=`<table class="tname"><tr><th style="text-align:left">อันดับ / ของรางวัล</th>${pv.cols.map((c,i)=>'<th>'+pv.colLabels[i]+'</th>').join('')}<th>รวม</th></tr>`;
+  pv.rdList.forEach(([n,data],idx)=>{
     const tot=Object.values(data).reduce((a,b)=>a+b,0);
-    r5r+=`<tr><td>${n}</td>${pv.cols.map(c=>'<td>'+(data[c]||'–')+'</td>').join('')}<td><b>${tot}</b></td></tr>`;
+    const rank=idx+1;
+    const isTop=rank<=5;
+    const badge=`<span class="rank-badge rank-${isTop?rank:'n'}">${rank}</span>`;
+    r5r+=`<tr class="${isTop?'reward-top':''}"><td>${badge}${n}</td>${pv.cols.map(c=>'<td>'+(data[c]||'–')+'</td>').join('')}<td><b>${tot}</b></td></tr>`;
   });
   r5r+=`<tr class="tot"><td style="text-align:left">รวม</td>${pv.cols.map(c=>'<td>'+(pv.countByCol[c]||0)+'</td>').join('')}<td>${s.total_count}</td></tr></table>`;
   document.getElementById('t5r').innerHTML=r5r;

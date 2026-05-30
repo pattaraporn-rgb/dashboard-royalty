@@ -250,8 +250,10 @@ function exportAsHTML(){
   <div id="p5_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="gift"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p5_content" style="display:none">
     <div class="kpi-summary" id="kpi5"></div>
-    <div class="grid2"><div class="chartbox sm"><canvas id="c5a"></canvas></div><div class="chartbox sm"><canvas id="c5b"></canvas></div></div>
-    <div class="tbl-wrap"><div id="t5"></div></div>
+    <div class="chartbox tall"><canvas id="c5a"></canvas></div>
+    <div class="chart-hint"><i data-lucide="info"></i> คลิกชื่อชุดข้อมูล = โฟกัสเฉพาะอันนั้น • ⌘+คลิก (Mac) หรือ Ctrl+คลิก (Windows) = เพิ่ม/ลบหลายอัน (เทียบกัน) • คลิกซ้ำที่อันเดิม = แสดงทั้งหมด</div>
+    <div class="chartbox tall"><canvas id="c5b"></canvas></div>
+    <div class="tbl-wrap tbl-mid"><div id="t5"></div></div>
     <div class="subhd">4.2 · ของรางวัลยอดนิยม <span id="pivotModeLabel" style="font-size:11px;font-weight:400;color:var(--mut);"></span></div>
     <div class="tbl-wrap"><div id="t5r"></div></div>
   </div>
