@@ -57,15 +57,31 @@ function valueLabel(formatter){
 // Soft grid styling — light enough to not compete with the data
 const softGrid={color:'rgba(0,0,0,0.05)',drawBorder:false};
 
-// Legend click handler that isolates the clicked series (focus mode):
-//   - first click on a series → hide every other series
-//   - click the same series again (now the only visible one) → restore all
-//   - click a different series while solo → switch focus to that series
+// Legend click handler — two modes, picked by modifier key:
+//
+//   PLAIN CLICK = SOLO (focus)
+//     - first click on a series → hide every other series
+//     - click the same series again (now the only visible one) → restore all
+//     - click a different series while solo → switch focus to that series
+//
+//   SHIFT / CMD / CTRL + CLICK = TOGGLE (compare-mode)
+//     - flips just that series on/off without touching the others
+//     - lets the user build a custom comparison set, e.g. show only
+//       TikTok + Shopee by clicking the others off one by one
+//
 // Drop this into chart.options.plugins.legend.onClick.
 function focusLegendClick(e,legendItem,legend){
   const chart=legend.chart;
   const target=legendItem.datasetIndex;
   const n=chart.data.datasets.length;
+  // Modifier held → individual toggle (matches Mac Finder / Tableau / Plotly)
+  const ev=e&&e.native;
+  if(ev&&(ev.shiftKey||ev.metaKey||ev.ctrlKey)){
+    if(chart.isDatasetVisible(target)) chart.hide(target);
+    else chart.show(target);
+    return;
+  }
+  // Plain click → solo / restore
   let visible=0;
   for(let i=0;i<n;i++) if(chart.isDatasetVisible(i)) visible++;
   const isSolo=visible===1&&chart.isDatasetVisible(target);
