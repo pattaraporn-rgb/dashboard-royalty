@@ -72,6 +72,17 @@ h1{font-size:18px;font-weight:700;margin:2px 0;opacity:.9;}
 .subhd{font-size:13px;font-weight:800;color:var(--brand);margin:20px 0 6px;border-left:3px solid var(--brand);padding-left:8px;}
 .chartbox{position:relative;height:300px;margin:10px 0 18px;}
 .chartbox.sm{height:260px;}
+/* Horizontal-scroll variant: used when too many bars/series fit comfortably in viewport.
+   Inner div gets its min-width set in JS based on data length. */
+.chartbox.scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+.chartbox.scroll>.chart-scroll-inner{position:relative;height:100%;min-width:100%;}
+.chartbox.scroll::-webkit-scrollbar{height:8px;}
+.chartbox.scroll::-webkit-scrollbar-track{background:transparent;}
+.chartbox.scroll::-webkit-scrollbar-thumb{background:#d4d6e0;border-radius:4px;}
+.chartbox.scroll::-webkit-scrollbar-thumb:hover{background:#b3b6c4;}
+/* Discoverability hint above interactive charts */
+.chart-hint{font-size:11px;color:var(--mut);margin:4px 0 6px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.chart-hint [data-lucide]{width:14px;height:14px;color:var(--brand);}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
 .stat{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid var(--brand);border:1px solid var(--line);border-left-width:4px;box-shadow:0 1px 2px rgba(0,0,0,.03);transition:transform 180ms ease,box-shadow 180ms ease;}
@@ -94,6 +105,10 @@ tr.tot td:first-child{color:var(--brand);}
 .up{color:#1a8f3c;font-weight:bold;}
 .down{color:var(--err);font-weight:bold;}
 .flat{color:var(--mut);}
+/* Subtle tint on %Ch cells so direction is obvious without reading the value.
+   Hover still wins because tr:hover td uses !important. */
+tbody tr td.up{background:rgba(26,143,60,.07);}
+tbody tr td.down{background:rgba(200,16,46,.07);}
 .note{font-size:11.5px;background:#f0f4ff;border-left:3px solid var(--brand);padding:9px 13px;border-radius:0 6px 6px 0;margin-top:12px;color:#444;line-height:1.6;}
 .note.ok{background:#f0faf2;border-left-color:#1a8f3c;}
 .note.warn{background:#fffbe6;border-left-color:#f39c12;}
@@ -615,7 +630,8 @@ footer{font-size:11px;text-align:center;padding:24px;background:#0A0A1A;color:#6
   </div>
   <div id="p3_content" style="display:none">
     <div class="stat-row" id="kpi3"></div>
-    <div class="chartbox"><canvas id="c3"></canvas></div>
+    <div class="chart-hint"><i data-lucide="info"></i> คลิกที่ชื่อช่องทางในแถบด้านบนเพื่อซ่อน/แสดง • เลื่อนซ้าย-ขวาเพื่อดูเดือนเพิ่ม</div>
+    <div class="chartbox scroll"><div class="chart-scroll-inner"><canvas id="c3"></canvas></div></div>
     <div class="tbl-wrap"><div id="t3"></div></div>
   </div>
 </div>

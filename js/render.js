@@ -256,21 +256,44 @@ function renderP3(){
   if(!D||!D.s3){ setPanelContent('p3',false); return; }
   setPanelContent('p3',true);
   const s=D.s3, lab=s.months.map(m=>ML[m]||m);
+  const useKeys=CH_KEYS.filter(k=>s.data[k]&&s.totals[k]>0);
+
+  // Grouped bars need horizontal space per month group. Set min-width on the
+  // scroll wrapper so the chart can scroll instead of cramming bars into a
+  // narrow viewport. Roughly: (channel-count * 16px bar + 28px gap) per month.
+  const minPerMonth=Math.max(70,useKeys.length*16+28);
+  const minWidth=Math.max(720,s.months.length*minPerMonth);
+  const scrollInner=document.querySelector('#p3_content .chart-scroll-inner');
+  if(scrollInner) scrollInner.style.minWidth=minWidth+'px';
+
   mkChart('c3',{type:'bar',
-    data:{labels:lab, datasets:CH_KEYS.filter(k=>s.data[k]).map(k=>({label:k,data:s.data[k],backgroundColor:CHART_COLORS[k],borderRadius:3}))},
+    data:{labels:lab, datasets:useKeys.map(k=>({
+      label:k, data:s.data[k], backgroundColor:CHART_COLORS[k],
+      borderRadius:3, maxBarThickness:30
+    }))},
+    // Grouped (not stacked) — each channel sits side-by-side per month for easy comparison
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+      interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'top',align:'end'},
-        datalabels:topOfStackLabel(),
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ฿${fmt(c.parsed.y)}`}}
+        legend:{position:'top',align:'end',labels:{padding:14,boxWidth:14,boxHeight:14,usePointStyle:false}},
+        // Tooltip groups all channels for the hovered month and adds a footer with the total
+        tooltip:{
+          callbacks:{
+            label:c=>` ${c.dataset.label}: ฿${fmt(c.parsed.y)}`,
+            footer:items=>'รวมเดือนนี้: ฿'+fmt(items.reduce((sum,i)=>sum+(+i.parsed.y||0),0))
+          },
+          footerFont:{weight:'bold',size:12},
+          footerMarginTop:8
+        }
       },
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
+      scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
     }
   });
-  const useKeys=CH_KEYS.filter(k=>s.data[k]&&s.totals[k]>0);
+
   document.getElementById('kpi3').innerHTML=
     stat('฿'+fmt(s.grand),'ยอดขายรวม','#5a3a00')+
     useKeys.map(k=>stat('฿'+fmt(s.totals[k]),k,CHART_COLORS[k]||'#555')).join('');
+
   let r=`<table><tr><th>เดือน</th>${chTh(useKeys)}<th>รวม (THB)</th><th>%Ch</th></tr>`;
   s.months.forEach((m,i)=>{r+=`<tr><td>${ML[m]||m}</td>${useKeys.map(k=>'<td>'+fmt(s.data[k][i])+'</td>').join('')}<td><b>${fmt(s.total[i])}</b></td>${pchCell(s.pch[i])}</tr>`;});
   r+=`<tr class="tot"><td>รวม</td>${useKeys.map(k=>'<td>'+fmt(s.totals[k])+'</td>').join('')}<td>${fmt(s.grand)}</td><td>–</td></tr></table>`;
