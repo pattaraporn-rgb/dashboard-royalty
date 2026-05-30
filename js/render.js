@@ -295,9 +295,8 @@ function renderP3(){
 
   // Lines need ~90px per month for labels to breathe; horizontal scroll handles
   // long time ranges. Min 720px so a short range still fills the panel.
-  const minWidth=Math.max(720,s.months.length*90);
-  const scrollInner=document.querySelector('#p3_content .chart-scroll-inner');
-  if(scrollInner) scrollInner.style.minWidth=minWidth+'px';
+  const scrollInner=document.getElementById('c3').closest('.chart-scroll-inner');
+  if(scrollInner) scrollInner.style.minWidth=Math.max(720,s.months.length*90)+'px';
 
   // Multi-line chart: one line per channel. Grouped bars made small channels
   // (Lazada, Loyalty Manual) invisible whenever a dominant channel (Shopee)
@@ -365,28 +364,53 @@ function renderP4(){
   const a=D.s4a, b=D.s4b, lab=a.months.map(m=>ML[m]||m);
   const aKeys=CH_KEYS.filter(k=>a.data[k]&&a.totals[k]>0);
   const bKeys=(b.sckeys||SC_KEYS).filter(k=>b.data[k]&&b.totals[k]>0);
-  mkChart('c4a',{type:'bar',
-    data:{labels:lab,datasets:aKeys.map(k=>({label:k,data:a.data[k],backgroundColor:CHART_COLORS[k],borderRadius:3}))},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
-      plugins:{
-        legend:{position:'top',align:'end',onClick:focusLegendClick},
-        datalabels:topOfStackLabel(),
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)} แต้ม`}}
+
+  // Same multi-line treatment as P3 (Sales): channels become independent lines
+  // so a dominant series (e.g. Shopee or Welcome Point) doesn't crush the rest;
+  // value labels with display:'auto' show ✦ where they fit; tooltip groups all
+  // series for the hovered month with a bold "รวมเดือนนี้" footer.
+  const lineDs=(k,data)=>{
+    const color=CHART_COLORS[k]||'#999';
+    return {label:k,data,borderColor:color,backgroundColor:color,
+      borderWidth:2.5,tension:0.3,fill:false,
+      pointRadius:4,pointHoverRadius:7,
+      pointBackgroundColor:'#fff',pointBorderColor:color,pointBorderWidth:2};
+  };
+  const lineOpts=()=>({
+    responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'top',align:'end',onClick:focusLegendClick,
+        labels:{padding:14,boxWidth:14,boxHeight:14,usePointStyle:false}},
+      tooltip:{
+        callbacks:{
+          label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)} แต้ม`,
+          footer:items=>'รวมเดือนนี้: '+fmt(items.reduce((sum,i)=>sum+(+i.parsed.y||0),0))+' แต้ม'
+        },
+        footerFont:{weight:'bold',size:12},
+        footerMarginTop:8
       },
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
-    }
+      datalabels:{
+        display:'auto',anchor:'end',align:'top',offset:6,
+        color:ctx=>ctx.dataset.borderColor,
+        font:{weight:'bold',size:9},
+        backgroundColor:'rgba(255,255,255,0.88)',
+        borderRadius:4,padding:{top:2,bottom:2,left:5,right:5},
+        formatter:v=>v>0?fmt(v):''
+      }
+    },
+    scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
   });
-  mkChart('c4b',{type:'bar',
-    data:{labels:lab,datasets:bKeys.map(k=>({label:k,data:b.data[k],backgroundColor:CHART_COLORS[k]||'#999',borderRadius:3}))},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
-      plugins:{
-        legend:{position:'top',align:'end',onClick:focusLegendClick},
-        datalabels:topOfStackLabel(),
-        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)} แต้ม`}}
-      },
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:softGrid,ticks:{callback:v=>fmt(v)}}}
-    }
-  });
+
+  // 3.1 — Points by channel (5 channels)
+  const c4aScroll=document.getElementById('c4a').closest('.chart-scroll-inner');
+  if(c4aScroll) c4aScroll.style.minWidth=Math.max(720,a.months.length*90)+'px';
+  mkChart('c4a',{type:'line',data:{labels:lab,datasets:aKeys.map(k=>lineDs(k,a.data[k]))},options:lineOpts()});
+
+  // 3.2 — Points by all sources (includes Welcome, Invite, Import, Survey, etc.)
+  const c4bScroll=document.getElementById('c4b').closest('.chart-scroll-inner');
+  if(c4bScroll) c4bScroll.style.minWidth=Math.max(720,b.months.length*90)+'px';
+  mkChart('c4b',{type:'line',data:{labels:lab,datasets:bKeys.map(k=>lineDs(k,b.data[k]))},options:lineOpts()});
   const wpTotal=b.totals['Welcome Point']||0;
   // Hero = total points across all sources (3.2). The three sub-cards keep the
   // channel-only subtotal (3.1), Welcome-Point subset, and Welcome ratio so

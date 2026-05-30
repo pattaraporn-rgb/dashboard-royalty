@@ -233,10 +233,11 @@ function exportAsHTML(){
   <div id="p4_empty" class="empty-state" style="display:none"><div class="es-icon"><i data-lucide="star"></i></div><h3>ไม่มีข้อมูล</h3></div>
   <div id="p4_content" style="display:none">
     <div class="kpi-summary" id="kpi4"></div>
+    <div class="chart-hint"><i data-lucide="info"></i> คลิกชื่อช่องทาง = โฟกัสเฉพาะอันนั้น • ⌘+คลิก (Mac) หรือ Ctrl+คลิก (Windows) = เพิ่ม/ลบหลายอัน (เทียบกัน) • คลิกซ้ำที่อันเดิม = แสดงทั้งหมด</div>
     <div class="subhd">3.1 · คะแนนตามช่องทาง</div><div class="desc">คะแนนที่แจก (GIVEN) แยกตามช่องทาง — ไม่รวม Welcome Point</div>
-    <div class="chartbox sm"><canvas id="c4a"></canvas></div><div class="tbl-wrap"><div id="t4a"></div></div>
+    <div class="chartbox sm scroll"><div class="chart-scroll-inner"><canvas id="c4a"></canvas></div></div><div class="tbl-wrap"><div id="t4a"></div></div>
     <div class="subhd">3.2 · คะแนนแยกตามแหล่งที่มาทั้งหมด</div><div class="desc">รวมทุกแหล่ง รวมถึง <b>Welcome Point</b></div>
-    <div class="chartbox sm"><canvas id="c4b"></canvas></div><div class="tbl-wrap"><div id="t4b"></div></div>
+    <div class="chartbox sm scroll"><div class="chart-scroll-inner"><canvas id="c4b"></canvas></div></div><div class="tbl-wrap"><div id="t4b"></div></div>
     <div class="note" id="n4"></div>
   </div>
 </div></div>
